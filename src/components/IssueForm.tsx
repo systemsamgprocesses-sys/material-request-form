@@ -94,7 +94,7 @@ const IssueForm = () => {
             />
             <div className="text-left">
               <h1 className="text-3xl font-bold text-foreground">AMG Reality</h1>
-              <p className="text-lg text-muted-foreground">Issue Management System</p>
+              <p className="text-lg text-muted-foreground">Material Issue Request form</p>
             </div>
           </div>
         </div>
