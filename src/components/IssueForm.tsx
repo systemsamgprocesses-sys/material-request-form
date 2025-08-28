@@ -119,7 +119,7 @@ const IssueForm = () => {
                   </SelectTrigger>
                   <SelectContent className="modern-card border-none">
                     {stores.map((store) => (
-                      <SelectItem key={store} value={store} className="focus:bg-primary/5">
+                      <SelectItem key={store} value={store} className="focus:bg-primary/10 focus:text-foreground hover:bg-primary/10 hover:text-foreground">
                         {store}
                       </SelectItem>
                     ))}
