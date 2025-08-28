@@ -18,7 +18,7 @@ interface FormData {
   quantity: string;
   issuedTo: string;
   purpose: string;
-  gatePass: string;
+  poNumber: string;
   date: string;
   indentNumber: string;
   au: string;
@@ -45,7 +45,7 @@ const IssueForm = () => {
     quantity: "",
     issuedTo: "",
     purpose: "",
-    gatePass: "",
+    poNumber: "",
     date: "",
     indentNumber: "",
     au: ""
@@ -64,7 +64,7 @@ const IssueForm = () => {
       quantity: 'quantity',
       issuedTo: 'issuedTo',
       purpose: 'purpose',
-      gatePass: 'gatePass',
+      poNumber: 'poNumber',
       date: 'date',
       indentNumber: 'indentNumber',
       au: 'au'
@@ -205,7 +205,7 @@ const IssueForm = () => {
           quantity: "",
           issuedTo: "",
           purpose: "",
-          gatePass: "",
+          poNumber: "",
           date: "",
           indentNumber: "",
           au: ""
@@ -381,15 +381,15 @@ const IssueForm = () => {
             {/* Row 3 */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <Label htmlFor="gatePass" className="text-sm font-semibold text-foreground">
-                  Gate Pass No.
+                <Label htmlFor="poNumber" className="text-sm font-semibold text-foreground">
+                  PO Number
                 </Label>
                 <Input
-                  id="gatePass"
-                  value={formData.gatePass}
-                  onChange={(e) => handleInputChange("gatePass", e.target.value)}
+                  id="poNumber"
+                  value={formData.poNumber}
+                  onChange={(e) => handleInputChange("poNumber", e.target.value)}
                   className="modern-input h-12"
-                  placeholder="Enter gate pass number"
+                  placeholder="Enter PO number"
                 />
               </div>
 
