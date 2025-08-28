@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,6 +31,7 @@ const stores = [
 
 const IssueForm = () => {
   const { toast } = useToast();
+  const [itemNames, setItemNames] = useState<string[]>([]);
   const [formData, setFormData] = useState<FormData>({
     storeName: "",
     itemName: "",
@@ -44,11 +45,35 @@ const IssueForm = () => {
     au: ""
   });
 
+  // Load item names on component mount
+  useEffect(() => {
+    const loadItemNames = async () => {
+      try {
+        // Use JSONP approach to avoid CORS
+        const script = document.createElement('script');
+        script.src = 'https://script.google.com/macros/s/AKfycbxpTagX48Xood2raaimXfxhh14EdGUXAtaqgDoWog-edBumuUfHmFSTq5Wa3mkvern45A/exec?callback=handleItemNames&action=getItems';
+        
+        // Create global callback function
+        (window as any).handleItemNames = (data: string[]) => {
+          setItemNames(data || []);
+          document.body.removeChild(script);
+          delete (window as any).handleItemNames;
+        };
+        
+        document.body.appendChild(script);
+      } catch (error) {
+        console.log('Could not load item names');
+      }
+    };
+
+    loadItemNames();
+  }, []);
+
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Basic validation
@@ -61,42 +86,42 @@ const IssueForm = () => {
       return;
     }
 
-    try {
-      const response = await fetch('https://script.google.com/macros/s/AKfycbxpTagX48Xood2raaimXfxhh14EdGUXAtaqgDoWog-edBumuUfHmFSTq5Wa3mkvern45A/exec', {
-        method: 'POST',
-        body: JSON.stringify(formData),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (response.ok) {
-        toast({
-          title: "✅ Submitted Successfully!",
-          description: "Your issue form has been submitted.",
-        });
-        
-        // Reset form
-        setFormData({
-          storeName: "",
-          itemName: "",
-          specifications: "",
-          quantity: "",
-          issuedTo: "",
-          purpose: "",
-          gatePass: "",
-          date: "",
-          indentNumber: "",
-          au: ""
-        });
-      } else {
-        throw new Error('Failed to submit');
-      }
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to submit form. Please try again.",
-        variant: "destructive"
-      });
-    }
+    // Use form submission to avoid CORS issues
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = 'https://script.google.com/macros/s/AKfycbxpTagX48Xood2raaimXfxhh14EdGUXAtaqgDoWog-edBumuUfHmFSTq5Wa3mkvern45A/exec';
+    form.target = '_blank';
+
+    Object.entries(formData).forEach(([key, value]) => {
+      const input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = key;
+      input.value = value;
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(form);
+    form.submit();
+    document.body.removeChild(form);
+
+    toast({
+      title: "✅ Submitted Successfully!",
+      description: "Your issue form has been submitted.",
+    });
+
+    // Reset form
+    setFormData({
+      storeName: "",
+      itemName: "",
+      specifications: "",
+      quantity: "",
+      issuedTo: "",
+      purpose: "",
+      gatePass: "",
+      date: "",
+      indentNumber: "",
+      au: ""
+    });
   };
 
   return (
@@ -151,11 +176,17 @@ const IssueForm = () => {
                 </Label>
                 <Input
                   id="itemName"
+                  list="itemNamesList"
                   value={formData.itemName}
                   onChange={(e) => handleInputChange("itemName", e.target.value)}
                   className="modern-input h-12"
                   placeholder="Enter item name"
                 />
+                <datalist id="itemNamesList">
+                  {itemNames.map((item, index) => (
+                    <option key={index} value={item} />
+                  ))}
+                </datalist>
               </div>
 
               <div className="space-y-2">
