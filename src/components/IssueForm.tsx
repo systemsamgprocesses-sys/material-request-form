@@ -51,6 +51,39 @@ const IssueForm = () => {
     au: ""
   });
 
+  // Load URL parameters and prefill form
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const prefillData: Partial<FormData> = {};
+    
+    // Map URL parameters to form fields
+    const paramMapping = {
+      storeName: 'storeName',
+      itemName: 'itemName', 
+      specifications: 'specifications',
+      quantity: 'quantity',
+      issuedTo: 'issuedTo',
+      purpose: 'purpose',
+      gatePass: 'gatePass',
+      date: 'date',
+      indentNumber: 'indentNumber',
+      au: 'au'
+    };
+    
+    // Extract values from URL parameters
+    Object.entries(paramMapping).forEach(([urlParam, formField]) => {
+      const value = urlParams.get(urlParam);
+      if (value) {
+        prefillData[formField as keyof FormData] = decodeURIComponent(value);
+      }
+    });
+    
+    // Update form data if any prefill data exists
+    if (Object.keys(prefillData).length > 0) {
+      setFormData(prev => ({ ...prev, ...prefillData }));
+    }
+  }, []);
+
   // Load item names on component mount
   useEffect(() => {
     const loadItemNames = async () => {
