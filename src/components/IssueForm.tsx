@@ -5,6 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronsUpDown } from "lucide-react";
+import { cn } from "@/lib/utils";
 import amgLogo from "@/assets/amg-logo-new.png";
 
 interface FormData {
@@ -33,6 +37,7 @@ const IssueForm = () => {
   const { toast } = useToast();
   const [itemNames, setItemNames] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [openItemDropdown, setOpenItemDropdown] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     storeName: "",
     itemName: "",
@@ -229,19 +234,50 @@ const IssueForm = () => {
                 <Label htmlFor="itemName" className="text-sm font-semibold text-foreground">
                   Item Name <span className="text-destructive">*</span>
                 </Label>
-                <Input
-                  id="itemName"
-                  list="itemNamesList"
-                  value={formData.itemName}
-                  onChange={(e) => handleInputChange("itemName", e.target.value)}
-                  className="modern-input h-12"
-                  placeholder="Enter item name"
-                />
-                <datalist id="itemNamesList">
-                  {itemNames.map((item, index) => (
-                    <option key={index} value={item} />
-                  ))}
-                </datalist>
+                <Popover open={openItemDropdown} onOpenChange={setOpenItemDropdown}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={openItemDropdown}
+                      className="modern-input h-12 justify-between font-normal"
+                    >
+                      {formData.itemName
+                        ? itemNames.find((item) => item === formData.itemName) || formData.itemName
+                        : "Select item name..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-full p-0 modern-card border-none" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search items..." />
+                      <CommandList>
+                        <CommandEmpty>No item found.</CommandEmpty>
+                        <CommandGroup>
+                          {itemNames.map((item) => (
+                            <CommandItem
+                              key={item}
+                              value={item}
+                              onSelect={(currentValue) => {
+                                handleInputChange("itemName", currentValue === formData.itemName ? "" : currentValue);
+                                setOpenItemDropdown(false);
+                              }}
+                              className="focus:bg-primary/10 focus:text-foreground hover:bg-primary/10 hover:text-foreground"
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  formData.itemName === item ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {item}
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <div className="space-y-2">
