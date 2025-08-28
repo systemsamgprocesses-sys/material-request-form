@@ -8,7 +8,7 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 219 14% 94%;
     --foreground: 222.2 84% 4.9%;
 
     --card: 0 0% 100%;
@@ -17,7 +17,7 @@ All colors MUST be HSL.
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --primary: 222 84% 35%;
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -36,7 +36,22 @@ All colors MUST be HSL.
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
+
+    /* Glass morphism tokens */
+    --glass-background: 255 255 255 / 0.15;
+    --glass-border: 255 255 255 / 0.18;
+    --glass-input: 255 255 255 / 0.75;
+    --glass-input-focus: 255 255 255 / 0.95;
+    
+    /* Gradient backgrounds */
+    --gradient-primary: linear-gradient(135deg, hsl(219, 84%, 35%), hsl(222, 47%, 25%));
+    --gradient-bg: linear-gradient(135deg, hsl(219, 14%, 94%), hsl(14, 25%, 65%));
+    
+    /* Shadows */
+    --shadow-glass: 0 8px 32px rgba(31, 38, 135, 0.37);
+    --shadow-inset: inset 2px 2px 5px rgba(0,0,0,0.05), inset -2px -2px 5px rgba(255,255,255,0.8);
+    --shadow-focus: 0 0 0 3px rgba(42,82,152,0.3);
 
     --sidebar-background: 0 0% 98%;
 
@@ -101,5 +116,42 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    background: var(--gradient-bg);
+    min-height: 100vh;
+  }
+
+  .glass {
+    background: rgba(var(--glass-background));
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(var(--glass-border));
+    box-shadow: var(--shadow-glass);
+  }
+
+  .glass-input {
+    background: rgba(var(--glass-input));
+    border: none;
+    box-shadow: var(--shadow-inset);
+    transition: all 0.25s ease;
+  }
+
+  .glass-input:focus {
+    background: rgba(var(--glass-input-focus));
+    box-shadow: var(--shadow-focus);
+  }
+
+  @keyframes fadeIn {
+    from { 
+      opacity: 0; 
+      transform: translateY(20px); 
+    }
+    to { 
+      opacity: 1; 
+      transform: translateY(0); 
+    }
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 1s ease;
   }
 }
