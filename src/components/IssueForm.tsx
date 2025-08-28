@@ -32,6 +32,7 @@ const stores = [
 const IssueForm = () => {
   const { toast } = useToast();
   const [itemNames, setItemNames] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<FormData>({
     storeName: "",
     itemName: "",
@@ -124,11 +125,19 @@ const IssueForm = () => {
       return;
     }
 
-    // Use form submission to avoid CORS issues
+    setIsSubmitting(true);
+
+    // Create hidden iframe for submission to avoid navigation
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.name = 'submission-frame';
+    document.body.appendChild(iframe);
+
+    // Create form and target the iframe
     const form = document.createElement('form');
     form.method = 'POST';
     form.action = 'https://script.google.com/macros/s/AKfycbxpTagX48Xood2raaimXfxhh14EdGUXAtaqgDoWog-edBumuUfHmFSTq5Wa3mkvern45A/exec';
-    form.target = '_blank';
+    form.target = 'submission-frame';
 
     Object.entries(formData).forEach(([key, value]) => {
       const input = document.createElement('input');
@@ -138,28 +147,36 @@ const IssueForm = () => {
       form.appendChild(input);
     });
 
+    // Handle iframe load event to detect completion
+    iframe.onload = () => {
+      setTimeout(() => {
+        setIsSubmitting(false);
+        document.body.removeChild(iframe);
+        document.body.removeChild(form);
+
+        toast({
+          title: "✅ Submitted Successfully!",
+          description: "Your issue form has been submitted and saved to the spreadsheet.",
+        });
+
+        // Reset form
+        setFormData({
+          storeName: "",
+          itemName: "",
+          specifications: "",
+          quantity: "",
+          issuedTo: "",
+          purpose: "",
+          gatePass: "",
+          date: "",
+          indentNumber: "",
+          au: ""
+        });
+      }, 1000); // Small delay to ensure submission is complete
+    };
+
     document.body.appendChild(form);
     form.submit();
-    document.body.removeChild(form);
-
-    toast({
-      title: "✅ Submitted Successfully!",
-      description: "Your issue form has been submitted.",
-    });
-
-    // Reset form
-    setFormData({
-      storeName: "",
-      itemName: "",
-      specifications: "",
-      quantity: "",
-      issuedTo: "",
-      purpose: "",
-      gatePass: "",
-      date: "",
-      indentNumber: "",
-      au: ""
-    });
   };
 
   return (
@@ -345,9 +362,17 @@ const IssueForm = () => {
             <div className="flex justify-end pt-6">
               <Button 
                 type="submit" 
-                className="modern-button px-12 py-3 text-white text-base font-semibold h-12"
+                disabled={isSubmitting}
+                className="modern-button px-12 py-3 text-white text-base font-semibold h-12 disabled:opacity-50"
               >
-                Submit Issue Form
+                {isSubmitting ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Submitting...
+                  </div>
+                ) : (
+                  "Submit Issue Form"
+                )}
               </Button>
             </div>
           </form>
