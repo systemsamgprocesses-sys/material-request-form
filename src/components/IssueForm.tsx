@@ -236,30 +236,37 @@ const IssueForm = () => {
                 </Label>
                 <Popover open={openItemDropdown} onOpenChange={setOpenItemDropdown}>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={openItemDropdown}
-                      className="modern-input h-12 justify-between font-normal"
-                    >
-                      {formData.itemName
-                        ? itemNames.find((item) => item === formData.itemName) || formData.itemName
-                        : "Select item name..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
+                    <div className="relative">
+                      <Input
+                        value={formData.itemName}
+                        onChange={(e) => handleInputChange("itemName", e.target.value)}
+                        onClick={() => setOpenItemDropdown(true)}
+                        className="modern-input h-12 pr-10"
+                        placeholder="Enter product name"
+                      />
+                      <ChevronsUpDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50" />
+                    </div>
                   </PopoverTrigger>
                   <PopoverContent className="w-full p-0 modern-card border-none" align="start">
                     <Command>
-                      <CommandInput placeholder="Search items..." />
+                      <CommandInput 
+                        placeholder="Search items..." 
+                        value={formData.itemName}
+                        onValueChange={(value) => handleInputChange("itemName", value)}
+                      />
                       <CommandList>
                         <CommandEmpty>No item found.</CommandEmpty>
                         <CommandGroup>
-                          {itemNames.map((item) => (
+                          {itemNames
+                            .filter(item => 
+                              item.toLowerCase().includes(formData.itemName.toLowerCase())
+                            )
+                            .map((item) => (
                             <CommandItem
                               key={item}
                               value={item}
                               onSelect={(currentValue) => {
-                                handleInputChange("itemName", currentValue === formData.itemName ? "" : currentValue);
+                                handleInputChange("itemName", currentValue);
                                 setOpenItemDropdown(false);
                               }}
                               className="focus:bg-primary/10 focus:text-foreground hover:bg-primary/10 hover:text-foreground"
