@@ -49,20 +49,58 @@ const IssueForm = () => {
   useEffect(() => {
     const loadItemNames = async () => {
       try {
-        // Use JSONP approach to avoid CORS
+        // Create a temporary script element to bypass CORS
         const script = document.createElement('script');
-        script.src = 'https://script.google.com/macros/s/AKfycbxpTagX48Xood2raaimXfxhh14EdGUXAtaqgDoWog-edBumuUfHmFSTq5Wa3mkvern45A/exec?callback=handleItemNames&action=getItems';
+        const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
         
         // Create global callback function
-        (window as any).handleItemNames = (data: string[]) => {
+        (window as any)[callbackName] = (data: string[]) => {
+          console.log('Received item names:', data);
           setItemNames(data || []);
           document.body.removeChild(script);
-          delete (window as any).handleItemNames;
+          delete (window as any)[callbackName];
         };
         
-        document.body.appendChild(script);
+        // Your Google Apps Script returns JSON, so we need to modify the approach
+        // Instead, let's try a different method using fetch with no-cors mode
+        try {
+          const response = await fetch('https://script.google.com/macros/s/AKfycbxpTagX48Xood2raaimXfxhh14EdGUXAtaqgDoWog-edBumuUfHmFSTq5Wa3mkvern45A/exec', {
+            method: 'GET',
+            mode: 'cors'
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log('Loaded item names via fetch:', data);
+            setItemNames(data || []);
+          } else {
+            throw new Error('Fetch failed');
+          }
+        } catch (fetchError) {
+          console.log('Fetch failed, trying iframe approach');
+          // Fallback: create hidden iframe to load data
+          const iframe = document.createElement('iframe');
+          iframe.style.display = 'none';
+          iframe.src = 'https://script.google.com/macros/s/AKfycbxpTagX48Xood2raaimXfxhh14EdGUXAtaqgDoWog-edBumuUfHmFSTq5Wa3mkvern45A/exec';
+          document.body.appendChild(iframe);
+          
+          iframe.onload = () => {
+            try {
+              const content = iframe.contentDocument?.body?.textContent;
+              if (content) {
+                const data = JSON.parse(content);
+                console.log('Loaded item names via iframe:', data);
+                setItemNames(data || []);
+              }
+            } catch (iframeError) {
+              console.log('Could not load item names via iframe');
+            } finally {
+              document.body.removeChild(iframe);
+            }
+          };
+        }
       } catch (error) {
-        console.log('Could not load item names');
+        console.log('Could not load item names:', error);
       }
     };
 
