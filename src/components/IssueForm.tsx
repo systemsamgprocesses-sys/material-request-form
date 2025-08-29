@@ -15,6 +15,7 @@ interface ItemData {
   itemName: string;
   quantity: string;
   au: string;
+  remarks: string;
   currentStock?: number;
   stockAfterPurchase?: number;
 }
@@ -22,6 +23,7 @@ interface ItemData {
 interface OneTimeData {
   storeName: string;
   requestedBy: string;
+  byWhomOrders: string;
   purpose: string;
   gatePass?: string;
   indentNumber: string;
@@ -48,6 +50,7 @@ const IssueForm = () => {
   const [oneTimeData, setOneTimeData] = useState<OneTimeData>({
     storeName: "",
     requestedBy: "",
+    byWhomOrders: "",
     purpose: "",
     gatePass: "",
     indentNumber: "",
@@ -59,6 +62,7 @@ const IssueForm = () => {
     itemName: "",
     quantity: "",
     au: "",
+    remarks: "",
     currentStock: 0,
     stockAfterPurchase: 0
   }]);
@@ -84,7 +88,8 @@ const IssueForm = () => {
     const itemMapping = {
       itemName: 'itemName',
       quantity: 'quantity',
-      au: 'au'
+      au: 'au',
+      remarks: 'remarks'
     };
     
     // Extract values from URL parameters
@@ -175,9 +180,17 @@ const IssueForm = () => {
     newItems[index] = { ...newItems[index], [field]: value };
     
     // Calculate stock information when quantity changes
-    if (field === 'quantity' && newItems[index].itemName) {
+    if ((field === 'quantity' || field === 'itemName') && newItems[index].itemName) {
       const currentStock = stockData[newItems[index].itemName] || 0;
       const quantity = parseInt(value) || 0;
+      newItems[index].currentStock = currentStock;
+      newItems[index].stockAfterPurchase = currentStock + quantity;
+    }
+    
+    // Update stock when item name changes
+    if (field === 'itemName') {
+      const currentStock = stockData[value] || 0;
+      const quantity = parseInt(newItems[index].quantity) || 0;
       newItems[index].currentStock = currentStock;
       newItems[index].stockAfterPurchase = currentStock + quantity;
     }
@@ -190,6 +203,7 @@ const IssueForm = () => {
       itemName: "",
       quantity: "",
       au: "",
+      remarks: "",
       currentStock: 0,
       stockAfterPurchase: 0
     }]);
@@ -268,6 +282,7 @@ const IssueForm = () => {
         setOneTimeData({
           storeName: "",
           requestedBy: "",
+          byWhomOrders: "",
           purpose: "",
         gatePass: "",
           indentNumber: "",
@@ -279,6 +294,7 @@ const IssueForm = () => {
           itemName: "",
           quantity: "",
           au: "",
+          remarks: "",
           currentStock: 0,
           stockAfterPurchase: 0
         }]);
@@ -319,7 +335,23 @@ const IssueForm = () => {
             <div className="bg-muted/50 p-6 rounded-lg space-y-6">
               <h3 className="text-lg font-semibold text-foreground mb-4">General Information</h3>
               
-              {/* Row 1: Store, Requested By, Nature of Demand */}
+              {/* Row 1: Indent Number (Auto-generated) - Full width */}
+              <div className="grid grid-cols-1 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="indentNumber" className="text-sm font-semibold text-foreground">
+                    Indent Number (Auto-generated)
+                  </Label>
+                  <Input
+                    id="indentNumber"
+                    value={oneTimeData.indentNumber}
+                    readOnly
+                    className="modern-input h-12 bg-muted text-center text-lg font-semibold"
+                    placeholder="Auto-generated"
+                  />
+                </div>
+              </div>
+
+              {/* Row 2: Store, Requested By, By Whom Orders */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="storeName" className="text-sm font-semibold text-foreground">
@@ -353,20 +385,20 @@ const IssueForm = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="natureOfDemand" className="text-sm font-semibold text-foreground">
-                    Nature of Demand
+                  <Label htmlFor="byWhomOrders" className="text-sm font-semibold text-foreground">
+                    By Whom Orders/Instruction
                   </Label>
                   <Input
-                    id="natureOfDemand"
-                    value={oneTimeData.natureOfDemand}
-                    onChange={(e) => handleOneTimeDataChange("natureOfDemand", e.target.value)}
+                    id="byWhomOrders"
+                    value={oneTimeData.byWhomOrders}
+                    onChange={(e) => handleOneTimeDataChange("byWhomOrders", e.target.value)}
                     className="modern-input h-12"
-                    placeholder="Enter nature of demand"
+                    placeholder="Enter orders/instruction source"
                   />
                 </div>
               </div>
 
-              {/* Row 2: Project Name, Store Required By Date, Indent Number */}
+              {/* Row 3: Project Name, Store Required By Date, Nature of Demand */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-2">
                   <Label htmlFor="projectName" className="text-sm font-semibold text-foreground">
@@ -395,15 +427,15 @@ const IssueForm = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="indentNumber" className="text-sm font-semibold text-foreground">
-                    Indent Number (Auto-generated)
+                  <Label htmlFor="natureOfDemand" className="text-sm font-semibold text-foreground">
+                    Nature of Demand
                   </Label>
                   <Input
-                    id="indentNumber"
-                    value={oneTimeData.indentNumber}
-                    readOnly
-                    className="modern-input h-12 bg-muted"
-                    placeholder="Auto-generated"
+                    id="natureOfDemand"
+                    value={oneTimeData.natureOfDemand}
+                    onChange={(e) => handleOneTimeDataChange("natureOfDemand", e.target.value)}
+                    className="modern-input h-12"
+                    placeholder="Enter nature of demand"
                   />
                 </div>
               </div>
@@ -455,8 +487,28 @@ const IssueForm = () => {
                     )}
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="space-y-2">
+                  {/* Items Table Header */}
+                  <div className="grid grid-cols-12 gap-4 text-sm font-semibold text-muted-foreground border-b pb-2">
+                    <div className="col-span-1">S.No</div>
+                    <div className="col-span-3">Item Name</div>
+                    <div className="col-span-1">Quantity</div>
+                    <div className="col-span-1">A/U</div>
+                    <div className="col-span-1">Current Stock</div>
+                    <div className="col-span-1">Stock After</div>
+                    <div className="col-span-3">Remarks</div>
+                    <div className="col-span-1">Action</div>
+                  </div>
+
+                  <div className="grid grid-cols-12 gap-4 items-start">
+                    {/* Serial Number */}
+                    <div className="col-span-1 space-y-2">
+                      <div className="modern-input h-12 flex items-center justify-center bg-muted font-semibold text-foreground">
+                        {index + 1}
+                      </div>
+                    </div>
+
+                    {/* Item Name */}
+                    <div className="col-span-3 space-y-2">
                       <Label htmlFor={`itemName-${index}`} className="text-sm font-semibold text-foreground">
                         Item Name <span className="text-destructive">*</span>
                       </Label>
@@ -513,7 +565,8 @@ const IssueForm = () => {
                       </Popover>
                     </div>
 
-                    <div className="space-y-2">
+                    {/* Quantity */}
+                    <div className="col-span-1 space-y-2">
                       <Label htmlFor={`quantity-${index}`} className="text-sm font-semibold text-foreground">
                         Quantity <span className="text-destructive">*</span>
                       </Label>
@@ -526,15 +579,10 @@ const IssueForm = () => {
                         className="modern-input h-12"
                         placeholder="Enter quantity"
                       />
-                      {item.currentStock !== undefined && item.quantity && (
-                        <div className="text-xs text-muted-foreground mt-1">
-                          <div>Current Stock: {item.currentStock}</div>
-                          <div>Stock After Purchase: {item.stockAfterPurchase}</div>
-                        </div>
-                      )}
                     </div>
 
-                    <div className="space-y-2">
+                    {/* A/U */}
+                    <div className="col-span-1 space-y-2">
                       <Label htmlFor={`au-${index}`} className="text-sm font-semibold text-foreground">
                         A/U
                       </Label>
@@ -545,6 +593,55 @@ const IssueForm = () => {
                         className="modern-input h-12"
                         placeholder="Enter A/U"
                       />
+                    </div>
+
+                    {/* Current Stock */}
+                    <div className="col-span-1 space-y-2">
+                      <Label className="text-sm font-semibold text-foreground">
+                        Current Stock
+                      </Label>
+                      <div className="modern-input h-12 flex items-center justify-center bg-muted font-semibold text-foreground">
+                        {item.currentStock || 0}
+                      </div>
+                    </div>
+
+                    {/* Stock After Purchase */}
+                    <div className="col-span-1 space-y-2">
+                      <Label className="text-sm font-semibold text-foreground">
+                        Stock After
+                      </Label>
+                      <div className="modern-input h-12 flex items-center justify-center bg-muted font-semibold text-foreground">
+                        {item.stockAfterPurchase || 0}
+                      </div>
+                    </div>
+
+                    {/* Remarks */}
+                    <div className="col-span-3 space-y-2">
+                      <Label htmlFor={`remarks-${index}`} className="text-sm font-semibold text-foreground">
+                        Remarks
+                      </Label>
+                      <Input
+                        id={`remarks-${index}`}
+                        value={item.remarks}
+                        onChange={(e) => handleItemChange(index, "remarks", e.target.value)}
+                        className="modern-input h-12"
+                        placeholder="Enter remarks"
+                      />
+                    </div>
+
+                    {/* Action */}
+                    <div className="col-span-1 space-y-2 flex items-end">
+                      {items.length > 1 && (
+                        <Button 
+                          type="button" 
+                          onClick={() => removeItem(index)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-destructive hover:text-destructive h-12 w-full"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </div>
