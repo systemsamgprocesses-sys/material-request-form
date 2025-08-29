@@ -115,7 +115,7 @@ const IssueForm = () => {
   useEffect(() => {
     const loadMasterData = async () => {
       try {
-        const response = await fetch('https://script.google.com/macros/s/AKfycbxpTagX48Xood2raaimXfxhh14EdGUXAtaqgDoWog-edBumuUfHmFSTq5Wa3mkvern45A/exec?action=getMasterData', {
+        const response = await fetch('https://script.google.com/macros/s/AKfycbw4a8syIT0aLF5DGVUIINWfqk1lXx36UOs-jGSLgOGKzAjl_0mpsb6sa7rVA-hQimGt6Q/exec?action=getMasterData', {
           method: 'GET',
           mode: 'cors'
         });
@@ -130,7 +130,7 @@ const IssueForm = () => {
         console.log('Could not load master data:', error);
         // Fallback to load just item names
         try {
-          const response = await fetch('https://script.google.com/macros/s/AKfycbxpTagX48Xood2raaimXfxhh14EdGUXAtaqgDoWog-edBumuUfHmFSTq5Wa3mkvern45A/exec', {
+          const response = await fetch('https://script.google.com/macros/s/AKfycbw4a8syIT0aLF5DGVUIINWfqk1lXx36UOs-jGSLgOGKzAjl_0mpsb6sa7rVA-hQimGt6Q/exec', {
             method: 'GET',
             mode: 'cors'
           });
@@ -147,7 +147,7 @@ const IssueForm = () => {
 
     const generateIndentNumber = async () => {
       try {
-        const response = await fetch('https://script.google.com/macros/s/AKfycbxpTagX48Xood2raaimXfxhh14EdGUXAtaqgDoWog-edBumuUfHmFSTq5Wa3mkvern45A/exec?action=getNextIndentNumber', {
+        const response = await fetch('https://script.google.com/macros/s/AKfycbw4a8syIT0aLF5DGVUIINWfqk1lXx36UOs-jGSLgOGKzAjl_0mpsb6sa7rVA-hQimGt6Q/exec?action=getNextIndentNumber', {
           method: 'GET',
           mode: 'cors'
         });
@@ -242,7 +242,7 @@ const IssueForm = () => {
     // Create form and target the iframe
     const form = document.createElement('form');
     form.method = 'POST';
-    form.action = 'https://script.google.com/macros/s/AKfycbxpTagX48Xood2raaimXfxhh14EdGUXAtaqgDoWog-edBumuUfHmFSTq5Wa3mkvern45A/exec';
+    form.action = 'https://script.google.com/macros/s/AKfycbw4a8syIT0aLF5DGVUIINWfqk1lXx36UOs-jGSLgOGKzAjl_0mpsb6sa7rVA-hQimGt6Q/exec';
     form.target = 'submission-frame';
 
     // Add submission data as JSON
