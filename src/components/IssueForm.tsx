@@ -488,30 +488,27 @@ const IssueForm = () => {
                   </div>
 
                   {/* Items Table Header */}
-                  <div className="grid grid-cols-12 gap-4 text-sm font-semibold text-muted-foreground border-b pb-2">
-                    <div className="col-span-1">S.No</div>
-                    <div className="col-span-3">Item Name</div>
-                    <div className="col-span-1">Quantity</div>
-                    <div className="col-span-1">A/U</div>
-                    <div className="col-span-1">Current Stock</div>
-                    <div className="col-span-1">Stock After</div>
-                    <div className="col-span-3">Remarks</div>
-                    <div className="col-span-1">Action</div>
+                  <div className="grid grid-cols-12 gap-3 text-sm font-semibold text-muted-foreground border-b pb-3 mb-4">
+                    <div className="col-span-1 text-center">S.No</div>
+                    <div className="col-span-3 text-left">Item Name</div>
+                    <div className="col-span-1 text-center">Quantity</div>
+                    <div className="col-span-1 text-center">A/U</div>
+                    <div className="col-span-1 text-center">Current Stock</div>
+                    <div className="col-span-1 text-center">Stock After</div>
+                    <div className="col-span-3 text-left">Remarks</div>
+                    <div className="col-span-1 text-center">Action</div>
                   </div>
 
-                  <div className="grid grid-cols-12 gap-4 items-start">
+                  <div className="grid grid-cols-12 gap-3 items-end">
                     {/* Serial Number */}
                     <div className="col-span-1 space-y-2">
-                      <div className="modern-input h-12 flex items-center justify-center bg-muted font-semibold text-foreground">
+                      <div className="h-12 flex items-center justify-center bg-muted rounded-md font-semibold text-foreground border">
                         {index + 1}
                       </div>
                     </div>
 
                     {/* Item Name */}
                     <div className="col-span-3 space-y-2">
-                      <Label htmlFor={`itemName-${index}`} className="text-sm font-semibold text-foreground">
-                        Item Name <span className="text-destructive">*</span>
-                      </Label>
                       <Popover open={openItemDropdowns[index] || false} onOpenChange={(open) => setItemDropdownOpen(index, open)}>
                         <PopoverTrigger asChild>
                           <div className="relative">
@@ -567,9 +564,6 @@ const IssueForm = () => {
 
                     {/* Quantity */}
                     <div className="col-span-1 space-y-2">
-                      <Label htmlFor={`quantity-${index}`} className="text-sm font-semibold text-foreground">
-                        Quantity <span className="text-destructive">*</span>
-                      </Label>
                       <Input
                         id={`quantity-${index}`}
                         type="number"
@@ -583,9 +577,6 @@ const IssueForm = () => {
 
                     {/* A/U */}
                     <div className="col-span-1 space-y-2">
-                      <Label htmlFor={`au-${index}`} className="text-sm font-semibold text-foreground">
-                        A/U
-                      </Label>
                       <Input
                         id={`au-${index}`}
                         value={item.au}
@@ -597,29 +588,20 @@ const IssueForm = () => {
 
                     {/* Current Stock */}
                     <div className="col-span-1 space-y-2">
-                      <Label className="text-sm font-semibold text-foreground">
-                        Current Stock
-                      </Label>
-                      <div className="modern-input h-12 flex items-center justify-center bg-muted font-semibold text-foreground">
+                      <div className="h-12 flex items-center justify-center bg-muted rounded-md font-semibold text-foreground border">
                         {item.currentStock || 0}
                       </div>
                     </div>
 
                     {/* Stock After Purchase */}
                     <div className="col-span-1 space-y-2">
-                      <Label className="text-sm font-semibold text-foreground">
-                        Stock After
-                      </Label>
-                      <div className="modern-input h-12 flex items-center justify-center bg-muted font-semibold text-foreground">
+                      <div className="h-12 flex items-center justify-center bg-muted rounded-md font-semibold text-foreground border">
                         {item.stockAfterPurchase || 0}
                       </div>
                     </div>
 
                     {/* Remarks */}
                     <div className="col-span-3 space-y-2">
-                      <Label htmlFor={`remarks-${index}`} className="text-sm font-semibold text-foreground">
-                        Remarks
-                      </Label>
                       <Input
                         id={`remarks-${index}`}
                         value={item.remarks}
@@ -630,14 +612,14 @@ const IssueForm = () => {
                     </div>
 
                     {/* Action */}
-                    <div className="col-span-1 space-y-2 flex items-end">
+                    <div className="col-span-1 flex items-center justify-center">
                       {items.length > 1 && (
                         <Button 
                           type="button" 
                           onClick={() => removeItem(index)}
                           variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:text-destructive h-12 w-full"
+                          size="icon"
+                          className="text-destructive hover:text-destructive h-10 w-10"
                         >
                           <X className="h-4 w-4" />
                         </Button>
