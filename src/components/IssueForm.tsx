@@ -7,21 +7,27 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Plus, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import amgLogo from "@/assets/amg-logo-new.png";
 
-interface FormData {
-  storeName: string;
+interface ItemData {
   itemName: string;
-  specifications: string;
   quantity: string;
-  issuedTo: string;
+  au: string;
+  currentStock?: number;
+  stockAfterPurchase?: number;
+}
+
+interface OneTimeData {
+  storeName: string;
+  requestedBy: string;
   purpose: string;
   gatePass: string;
-  date: string;
   indentNumber: string;
-  au: string;
+  natureOfDemand: string;
+  projectName: string;
+  storeRequiredByDate: string;
 }
 
 const stores = [
@@ -36,72 +42,93 @@ const stores = [
 const IssueForm = () => {
   const { toast } = useToast();
   const [itemNames, setItemNames] = useState<string[]>([]);
+  const [stockData, setStockData] = useState<{[key: string]: number}>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [openItemDropdown, setOpenItemDropdown] = useState(false);
-  const [formData, setFormData] = useState<FormData>({
+  const [openItemDropdowns, setOpenItemDropdowns] = useState<{[key: number]: boolean}>({});
+  const [oneTimeData, setOneTimeData] = useState<OneTimeData>({
     storeName: "",
-    itemName: "",
-    specifications: "",
-    quantity: "",
-    issuedTo: "",
+    requestedBy: "",
     purpose: "",
     gatePass: "",
-    date: "",
     indentNumber: "",
-    au: ""
+    natureOfDemand: "",
+    projectName: "",
+    storeRequiredByDate: ""
   });
+  const [items, setItems] = useState<ItemData[]>([{
+    itemName: "",
+    quantity: "",
+    au: "",
+    currentStock: 0,
+    stockAfterPurchase: 0
+  }]);
 
   // Load URL parameters and prefill form
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const prefillData: Partial<FormData> = {};
+    const prefillOneTime: Partial<OneTimeData> = {};
+    const prefillItems: Partial<ItemData> = {};
     
     // Map URL parameters to form fields
-    const paramMapping = {
+    const oneTimeMapping = {
       storeName: 'storeName',
-      itemName: 'itemName', 
-      specifications: 'specifications',
-      quantity: 'quantity',
-      issuedTo: 'issuedTo',
+      requestedBy: 'requestedBy',
       purpose: 'purpose',
       gatePass: 'gatePass',
-      date: 'date',
       indentNumber: 'indentNumber',
+      natureOfDemand: 'natureOfDemand',
+      projectName: 'projectName',
+      storeRequiredByDate: 'storeRequiredByDate'
+    };
+    
+    const itemMapping = {
+      itemName: 'itemName',
+      quantity: 'quantity',
       au: 'au'
     };
     
     // Extract values from URL parameters
-    Object.entries(paramMapping).forEach(([urlParam, formField]) => {
+    Object.entries(oneTimeMapping).forEach(([urlParam, formField]) => {
       const value = urlParams.get(urlParam);
       if (value) {
-        prefillData[formField as keyof FormData] = decodeURIComponent(value);
+        prefillOneTime[formField as keyof OneTimeData] = decodeURIComponent(value);
+      }
+    });
+    
+    Object.entries(itemMapping).forEach(([urlParam, formField]) => {
+      const value = urlParams.get(urlParam);
+      if (value) {
+        (prefillItems as any)[formField] = decodeURIComponent(value);
       }
     });
     
     // Update form data if any prefill data exists
-    if (Object.keys(prefillData).length > 0) {
-      setFormData(prev => ({ ...prev, ...prefillData }));
+    if (Object.keys(prefillOneTime).length > 0) {
+      setOneTimeData(prev => ({ ...prev, ...prefillOneTime }));
+    }
+    if (Object.keys(prefillItems).length > 0) {
+      setItems([{ ...items[0], ...prefillItems }]);
     }
   }, []);
 
-  // Load item names on component mount
+  // Load item names and stock data on component mount
   useEffect(() => {
-    const loadItemNames = async () => {
+    const loadMasterData = async () => {
       try {
-        // Create a temporary script element to bypass CORS
-        const script = document.createElement('script');
-        const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+        const response = await fetch('https://script.google.com/macros/s/AKfycbxpTagX48Xood2raaimXfxhh14EdGUXAtaqgDoWog-edBumuUfHmFSTq5Wa3mkvern45A/exec?action=getMasterData', {
+          method: 'GET',
+          mode: 'cors'
+        });
         
-        // Create global callback function
-        (window as any)[callbackName] = (data: string[]) => {
-          console.log('Received item names:', data);
-          setItemNames(data || []);
-          document.body.removeChild(script);
-          delete (window as any)[callbackName];
-        };
-        
-        // Your Google Apps Script returns JSON, so we need to modify the approach
-        // Instead, let's try a different method using fetch with no-cors mode
+        if (response.ok) {
+          const data = await response.json();
+          console.log('Loaded master data:', data);
+          setItemNames(data.itemNames || []);
+          setStockData(data.stockData || {});
+        }
+      } catch (error) {
+        console.log('Could not load master data:', error);
+        // Fallback to load just item names
         try {
           const response = await fetch('https://script.google.com/macros/s/AKfycbxpTagX48Xood2raaimXfxhh14EdGUXAtaqgDoWog-edBumuUfHmFSTq5Wa3mkvern45A/exec', {
             method: 'GET',
@@ -110,60 +137,101 @@ const IssueForm = () => {
           
           if (response.ok) {
             const data = await response.json();
-            console.log('Loaded item names via fetch:', data);
             setItemNames(data || []);
-          } else {
-            throw new Error('Fetch failed');
           }
-        } catch (fetchError) {
-          console.log('Fetch failed, trying iframe approach');
-          // Fallback: create hidden iframe to load data
-          const iframe = document.createElement('iframe');
-          iframe.style.display = 'none';
-          iframe.src = 'https://script.google.com/macros/s/AKfycbxpTagX48Xood2raaimXfxhh14EdGUXAtaqgDoWog-edBumuUfHmFSTq5Wa3mkvern45A/exec';
-          document.body.appendChild(iframe);
-          
-          iframe.onload = () => {
-            try {
-              const content = iframe.contentDocument?.body?.textContent;
-              if (content) {
-                const data = JSON.parse(content);
-                console.log('Loaded item names via iframe:', data);
-                setItemNames(data || []);
-              }
-            } catch (iframeError) {
-              console.log('Could not load item names via iframe');
-            } finally {
-              document.body.removeChild(iframe);
-            }
-          };
+        } catch (fallbackError) {
+          console.log('Could not load item names:', fallbackError);
         }
-      } catch (error) {
-        console.log('Could not load item names:', error);
       }
     };
 
-    loadItemNames();
+    const generateIndentNumber = async () => {
+      try {
+        const response = await fetch('https://script.google.com/macros/s/AKfycbxpTagX48Xood2raaimXfxhh14EdGUXAtaqgDoWog-edBumuUfHmFSTq5Wa3mkvern45A/exec?action=getNextIndentNumber', {
+          method: 'GET',
+          mode: 'cors'
+        });
+        
+        if (response.ok) {
+          const data = await response.text();
+          setOneTimeData(prev => ({ ...prev, indentNumber: data }));
+        }
+      } catch (error) {
+        console.log('Could not generate indent number:', error);
+        setOneTimeData(prev => ({ ...prev, indentNumber: 'I-001' }));
+      }
+    };
+
+    loadMasterData();
+    generateIndentNumber();
   }, []);
 
-  const handleInputChange = (field: keyof FormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+  const handleOneTimeDataChange = (field: keyof OneTimeData, value: string) => {
+    setOneTimeData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleItemChange = (index: number, field: keyof ItemData, value: string) => {
+    const newItems = [...items];
+    newItems[index] = { ...newItems[index], [field]: value };
+    
+    // Calculate stock information when quantity changes
+    if (field === 'quantity' && newItems[index].itemName) {
+      const currentStock = stockData[newItems[index].itemName] || 0;
+      const quantity = parseInt(value) || 0;
+      newItems[index].currentStock = currentStock;
+      newItems[index].stockAfterPurchase = currentStock + quantity;
+    }
+    
+    setItems(newItems);
+  };
+
+  const addItem = () => {
+    setItems([...items, {
+      itemName: "",
+      quantity: "",
+      au: "",
+      currentStock: 0,
+      stockAfterPurchase: 0
+    }]);
+  };
+
+  const removeItem = (index: number) => {
+    if (items.length > 1) {
+      setItems(items.filter((_, i) => i !== index));
+      const newDropdowns = { ...openItemDropdowns };
+      delete newDropdowns[index];
+      setOpenItemDropdowns(newDropdowns);
+    }
+  };
+
+  const setItemDropdownOpen = (index: number, open: boolean) => {
+    setOpenItemDropdowns(prev => ({ ...prev, [index]: open }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
     // Basic validation
-    if (!formData.storeName || !formData.itemName || !formData.quantity || !formData.date) {
+    const hasValidItems = items.some(item => item.itemName && item.quantity);
+    if (!oneTimeData.storeName || !hasValidItems || !oneTimeData.storeRequiredByDate) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields",
+        description: "Please fill in all required fields including at least one item",
         variant: "destructive"
       });
       return;
     }
 
     setIsSubmitting(true);
+
+    // Create submission data - one row per item
+    const submissionData = items
+      .filter(item => item.itemName && item.quantity)
+      .map(item => ({
+        ...oneTimeData,
+        ...item,
+        timestamp: new Date().toISOString()
+      }));
 
     // Create hidden iframe for submission to avoid navigation
     const iframe = document.createElement('iframe');
@@ -177,13 +245,12 @@ const IssueForm = () => {
     form.action = 'https://script.google.com/macros/s/AKfycbxpTagX48Xood2raaimXfxhh14EdGUXAtaqgDoWog-edBumuUfHmFSTq5Wa3mkvern45A/exec';
     form.target = 'submission-frame';
 
-    Object.entries(formData).forEach(([key, value]) => {
-      const input = document.createElement('input');
-      input.type = 'hidden';
-      input.name = key;
-      input.value = value;
-      form.appendChild(input);
-    });
+    // Add submission data as JSON
+    const dataInput = document.createElement('input');
+    dataInput.type = 'hidden';
+    dataInput.name = 'submissionData';
+    dataInput.value = JSON.stringify(submissionData);
+    form.appendChild(dataInput);
 
     // Handle iframe load event to detect completion
     iframe.onload = () => {
@@ -194,23 +261,28 @@ const IssueForm = () => {
 
         toast({
           title: "✅ Submitted Successfully!",
-          description: "Your issue form has been submitted and saved to the spreadsheet.",
+          description: "Your indent/issue request has been submitted and saved to the spreadsheet.",
         });
 
         // Reset form
-        setFormData({
+        setOneTimeData({
           storeName: "",
-          itemName: "",
-          specifications: "",
-          quantity: "",
-          issuedTo: "",
+          requestedBy: "",
           purpose: "",
           gatePass: "",
-          date: "",
           indentNumber: "",
-          au: ""
+          natureOfDemand: "",
+          projectName: "",
+          storeRequiredByDate: ""
         });
-      }, 1000); // Small delay to ensure submission is complete
+        setItems([{
+          itemName: "",
+          quantity: "",
+          au: "",
+          currentStock: 0,
+          stockAfterPurchase: 0
+        }]);
+      }, 1000);
     };
 
     document.body.appendChild(form);
@@ -230,7 +302,7 @@ const IssueForm = () => {
             />
             <div className="text-left">
               <h1 className="text-3xl font-bold text-foreground">AMG Reality</h1>
-              <p className="text-lg text-muted-foreground">Material Issue Request form</p>
+              <p className="text-lg text-muted-foreground">Indent/Issue Request form</p>
             </div>
           </div>
         </div>
@@ -238,200 +310,260 @@ const IssueForm = () => {
         {/* Form Card */}
         <div className="modern-card p-8 animate-slide-up">
           <div className="mb-6">
-            <h2 className="text-2xl font-semibold text-foreground mb-2">Issue Form</h2>
-            <p className="text-muted-foreground">Please fill in the details below to submit an issue request</p>
+            <h2 className="text-2xl font-semibold text-foreground mb-2">Indent/Issue Request Form</h2>
+            <p className="text-muted-foreground">Please fill in the details below to submit an indent/issue request</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Row 1 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="storeName" className="text-sm font-semibold text-foreground">
-                  Store Name <span className="text-destructive">*</span>
-                </Label>
-                <Select value={formData.storeName} onValueChange={(value) => handleInputChange("storeName", value)}>
-                  <SelectTrigger className="modern-input h-12">
-                    <SelectValue placeholder="Select Store" />
-                  </SelectTrigger>
-                  <SelectContent className="modern-card border-none">
-                    {stores.map((store) => (
-                      <SelectItem key={store} value={store} className="focus:bg-primary/10 focus:text-foreground hover:bg-primary/10 hover:text-foreground">
-                        {store}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* One-time Information Section */}
+            <div className="bg-muted/50 p-6 rounded-lg space-y-6">
+              <h3 className="text-lg font-semibold text-foreground mb-4">General Information</h3>
+              
+              {/* Row 1: Store, Requested By, Nature of Demand */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="storeName" className="text-sm font-semibold text-foreground">
+                    Store Name <span className="text-destructive">*</span>
+                  </Label>
+                  <Select value={oneTimeData.storeName} onValueChange={(value) => handleOneTimeDataChange("storeName", value)}>
+                    <SelectTrigger className="modern-input h-12">
+                      <SelectValue placeholder="Select Store" />
+                    </SelectTrigger>
+                    <SelectContent className="modern-card border-none">
+                      {stores.map((store) => (
+                        <SelectItem key={store} value={store} className="focus:bg-primary/10 focus:text-foreground hover:bg-primary/10 hover:text-foreground">
+                          {store}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="requestedBy" className="text-sm font-semibold text-foreground">
+                    Requested By
+                  </Label>
+                  <Input
+                    id="requestedBy"
+                    value={oneTimeData.requestedBy}
+                    onChange={(e) => handleOneTimeDataChange("requestedBy", e.target.value)}
+                    className="modern-input h-12"
+                    placeholder="Enter requester name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="natureOfDemand" className="text-sm font-semibold text-foreground">
+                    Nature of Demand
+                  </Label>
+                  <Input
+                    id="natureOfDemand"
+                    value={oneTimeData.natureOfDemand}
+                    onChange={(e) => handleOneTimeDataChange("natureOfDemand", e.target.value)}
+                    className="modern-input h-12"
+                    placeholder="Enter nature of demand"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="itemName" className="text-sm font-semibold text-foreground">
-                  Item Name <span className="text-destructive">*</span>
-                </Label>
-                <Popover open={openItemDropdown} onOpenChange={setOpenItemDropdown}>
-                  <PopoverTrigger asChild>
-                    <div className="relative">
-                      <Input
-                        value={formData.itemName}
-                        onChange={(e) => handleInputChange("itemName", e.target.value)}
-                        onClick={() => setOpenItemDropdown(true)}
-                        className="modern-input h-12 pr-10"
-                        placeholder="Enter product name"
-                      />
-                      <ChevronsUpDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50" />
+              {/* Row 2: Project Name, Store Required By Date, Indent Number */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="projectName" className="text-sm font-semibold text-foreground">
+                    Project Name (if any)
+                  </Label>
+                  <Input
+                    id="projectName"
+                    value={oneTimeData.projectName}
+                    onChange={(e) => handleOneTimeDataChange("projectName", e.target.value)}
+                    className="modern-input h-12"
+                    placeholder="Enter project name"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="storeRequiredByDate" className="text-sm font-semibold text-foreground">
+                    Store Required by Date <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="storeRequiredByDate"
+                    type="date"
+                    value={oneTimeData.storeRequiredByDate}
+                    onChange={(e) => handleOneTimeDataChange("storeRequiredByDate", e.target.value)}
+                    className="modern-input h-12"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="indentNumber" className="text-sm font-semibold text-foreground">
+                    Indent Number (Auto-generated)
+                  </Label>
+                  <Input
+                    id="indentNumber"
+                    value={oneTimeData.indentNumber}
+                    readOnly
+                    className="modern-input h-12 bg-muted"
+                    placeholder="Auto-generated"
+                  />
+                </div>
+              </div>
+
+              {/* Row 3: Gate Pass, Purpose */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="gatePass" className="text-sm font-semibold text-foreground">
+                    Gate Pass No.
+                  </Label>
+                  <Input
+                    id="gatePass"
+                    value={oneTimeData.gatePass}
+                    onChange={(e) => handleOneTimeDataChange("gatePass", e.target.value)}
+                    className="modern-input h-12"
+                    placeholder="Enter gate pass number"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="purpose" className="text-sm font-semibold text-foreground">
+                    Purpose
+                  </Label>
+                  <Textarea
+                    id="purpose"
+                    value={oneTimeData.purpose}
+                    onChange={(e) => handleOneTimeDataChange("purpose", e.target.value)}
+                    className="modern-input min-h-[48px] resize-none"
+                    placeholder="Enter purpose of request"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Items Section */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-foreground">Items Required</h3>
+                <Button 
+                  type="button" 
+                  onClick={addItem}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Another Item
+                </Button>
+              </div>
+
+              {items.map((item, index) => (
+                <div key={index} className="bg-background border rounded-lg p-6 space-y-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="text-md font-medium text-foreground">Item {index + 1}</h4>
+                    {items.length > 1 && (
+                      <Button 
+                        type="button" 
+                        onClick={() => removeItem(index)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor={`itemName-${index}`} className="text-sm font-semibold text-foreground">
+                        Item Name <span className="text-destructive">*</span>
+                      </Label>
+                      <Popover open={openItemDropdowns[index] || false} onOpenChange={(open) => setItemDropdownOpen(index, open)}>
+                        <PopoverTrigger asChild>
+                          <div className="relative">
+                            <Input
+                              value={item.itemName}
+                              onChange={(e) => handleItemChange(index, "itemName", e.target.value)}
+                              onClick={() => setItemDropdownOpen(index, true)}
+                              className="modern-input h-12 pr-10"
+                              placeholder="Enter product name"
+                            />
+                            <ChevronsUpDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50" />
+                          </div>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-full p-0 modern-card border-none" align="start">
+                          <Command>
+                            <CommandInput 
+                              placeholder="Search items..." 
+                              value={item.itemName}
+                              onValueChange={(value) => handleItemChange(index, "itemName", value)}
+                            />
+                            <CommandList>
+                              <CommandEmpty>No item found.</CommandEmpty>
+                              <CommandGroup>
+                                {itemNames
+                                  .filter(itemName => 
+                                    itemName.toLowerCase().includes(item.itemName.toLowerCase())
+                                  )
+                                  .map((itemName) => (
+                                  <CommandItem
+                                    key={itemName}
+                                    value={itemName}
+                                    onSelect={(currentValue) => {
+                                      handleItemChange(index, "itemName", currentValue);
+                                      setItemDropdownOpen(index, false);
+                                    }}
+                                    className="focus:bg-primary/10 focus:text-foreground hover:bg-primary/10 hover:text-foreground"
+                                  >
+                                    <Check
+                                      className={cn(
+                                        "mr-2 h-4 w-4",
+                                        item.itemName === itemName ? "opacity-100" : "opacity-0"
+                                      )}
+                                    />
+                                    {itemName}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                     </div>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-full p-0 modern-card border-none" align="start">
-                    <Command>
-                      <CommandInput 
-                        placeholder="Search items..." 
-                        value={formData.itemName}
-                        onValueChange={(value) => handleInputChange("itemName", value)}
+
+                    <div className="space-y-2">
+                      <Label htmlFor={`quantity-${index}`} className="text-sm font-semibold text-foreground">
+                        Quantity <span className="text-destructive">*</span>
+                      </Label>
+                      <Input
+                        id={`quantity-${index}`}
+                        type="number"
+                        min="1"
+                        value={item.quantity}
+                        onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
+                        className="modern-input h-12"
+                        placeholder="Enter quantity"
                       />
-                      <CommandList>
-                        <CommandEmpty>No item found.</CommandEmpty>
-                        <CommandGroup>
-                          {itemNames
-                            .filter(item => 
-                              item.toLowerCase().includes(formData.itemName.toLowerCase())
-                            )
-                            .map((item) => (
-                            <CommandItem
-                              key={item}
-                              value={item}
-                              onSelect={(currentValue) => {
-                                handleInputChange("itemName", currentValue);
-                                setOpenItemDropdown(false);
-                              }}
-                              className="focus:bg-primary/10 focus:text-foreground hover:bg-primary/10 hover:text-foreground"
-                            >
-                              <Check
-                                className={cn(
-                                  "mr-2 h-4 w-4",
-                                  formData.itemName === item ? "opacity-100" : "opacity-0"
-                                )}
-                              />
-                              {item}
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div>
+                      {item.currentStock !== undefined && item.quantity && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          <div>Current Stock: {item.currentStock}</div>
+                          <div>Stock After Purchase: {item.stockAfterPurchase}</div>
+                        </div>
+                      )}
+                    </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="quantity" className="text-sm font-semibold text-foreground">
-                  Quantity Issued <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="quantity"
-                  type="number"
-                  min="1"
-                  value={formData.quantity}
-                  onChange={(e) => handleInputChange("quantity", e.target.value)}
-                  className="modern-input h-12"
-                  placeholder="Enter quantity"
-                />
-              </div>
-            </div>
-
-            {/* Row 2 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="specifications" className="text-sm font-semibold text-foreground">
-                  Specifications
-                </Label>
-                <Input
-                  id="specifications"
-                  value={formData.specifications}
-                  onChange={(e) => handleInputChange("specifications", e.target.value)}
-                  className="modern-input h-12"
-                  placeholder="Enter specifications"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="issuedTo" className="text-sm font-semibold text-foreground">
-                  Issued To
-                </Label>
-                <Input
-                  id="issuedTo"
-                  value={formData.issuedTo}
-                  onChange={(e) => handleInputChange("issuedTo", e.target.value)}
-                  className="modern-input h-12"
-                  placeholder="Enter recipient name"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="date" className="text-sm font-semibold text-foreground">
-                  Date <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => handleInputChange("date", e.target.value)}
-                  className="modern-input h-12"
-                />
-              </div>
-            </div>
-
-            {/* Row 3 */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="gatePass" className="text-sm font-semibold text-foreground">
-                  Gate Pass No.
-                </Label>
-                <Input
-                  id="gatePass"
-                  value={formData.gatePass}
-                  onChange={(e) => handleInputChange("gatePass", e.target.value)}
-                  className="modern-input h-12"
-                  placeholder="Enter gate pass number"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="indentNumber" className="text-sm font-semibold text-foreground">
-                  Indent Number
-                </Label>
-                <Input
-                  id="indentNumber"
-                  value={formData.indentNumber}
-                  onChange={(e) => handleInputChange("indentNumber", e.target.value)}
-                  className="modern-input h-12"
-                  placeholder="Enter indent number"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="au" className="text-sm font-semibold text-foreground">
-                  A/U
-                </Label>
-                <Input
-                  id="au"
-                  value={formData.au}
-                  onChange={(e) => handleInputChange("au", e.target.value)}
-                  className="modern-input h-12"
-                  placeholder="Enter A/U"
-                />
-              </div>
-            </div>
-
-            {/* Purpose - Full width */}
-            <div className="space-y-2">
-              <Label htmlFor="purpose" className="text-sm font-semibold text-foreground">
-                Purpose
-              </Label>
-              <Textarea
-                id="purpose"
-                value={formData.purpose}
-                onChange={(e) => handleInputChange("purpose", e.target.value)}
-                className="modern-input min-h-[100px] resize-none"
-                placeholder="Enter purpose of issue"
-              />
+                    <div className="space-y-2">
+                      <Label htmlFor={`au-${index}`} className="text-sm font-semibold text-foreground">
+                        A/U
+                      </Label>
+                      <Input
+                        id={`au-${index}`}
+                        value={item.au}
+                        onChange={(e) => handleItemChange(index, "au", e.target.value)}
+                        className="modern-input h-12"
+                        placeholder="Enter A/U"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
 
             {/* Submit Button */}
@@ -447,7 +579,7 @@ const IssueForm = () => {
                     Submitting...
                   </div>
                 ) : (
-                  "Submit Issue Form"
+                  "Submit Indent/Issue Request"
                 )}
               </Button>
             </div>
