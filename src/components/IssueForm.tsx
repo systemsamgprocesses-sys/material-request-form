@@ -23,7 +23,7 @@ interface OneTimeData {
   storeName: string;
   requestedBy: string;
   purpose: string;
-  gatePass: string;
+  gatePass?: string;
   indentNumber: string;
   natureOfDemand: string;
   projectName: string;
@@ -269,7 +269,7 @@ const IssueForm = () => {
           storeName: "",
           requestedBy: "",
           purpose: "",
-          gatePass: "",
+        gatePass: "",
           indentNumber: "",
           natureOfDemand: "",
           projectName: "",
@@ -408,33 +408,18 @@ const IssueForm = () => {
                 </div>
               </div>
 
-              {/* Row 3: Gate Pass, Purpose */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="gatePass" className="text-sm font-semibold text-foreground">
-                    Gate Pass No.
-                  </Label>
-                  <Input
-                    id="gatePass"
-                    value={oneTimeData.gatePass}
-                    onChange={(e) => handleOneTimeDataChange("gatePass", e.target.value)}
-                    className="modern-input h-12"
-                    placeholder="Enter gate pass number"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="purpose" className="text-sm font-semibold text-foreground">
-                    Purpose
-                  </Label>
-                  <Textarea
-                    id="purpose"
-                    value={oneTimeData.purpose}
-                    onChange={(e) => handleOneTimeDataChange("purpose", e.target.value)}
-                    className="modern-input min-h-[48px] resize-none"
-                    placeholder="Enter purpose of request"
-                  />
-                </div>
+              {/* Purpose - Full width */}
+              <div className="space-y-2">
+                <Label htmlFor="purpose" className="text-sm font-semibold text-foreground">
+                  Purpose
+                </Label>
+                <Textarea
+                  id="purpose"
+                  value={oneTimeData.purpose}
+                  onChange={(e) => handleOneTimeDataChange("purpose", e.target.value)}
+                  className="modern-input min-h-[48px] resize-none"
+                  placeholder="Enter purpose of request"
+                />
               </div>
             </div>
 
