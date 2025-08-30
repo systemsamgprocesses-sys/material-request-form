@@ -470,164 +470,256 @@ const IssueForm = () => {
                 </Button>
               </div>
 
-              {items.map((item, index) => (
-                <div key={index} className="bg-background border rounded-lg p-6 space-y-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="text-md font-medium text-foreground">Item {index + 1}</h4>
-                    {items.length > 1 && (
-                      <Button 
-                        type="button" 
-                        onClick={() => removeItem(index)}
-                        variant="ghost"
-                        size="sm"
-                        className="text-destructive hover:text-destructive"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
+              {/* Desktop Table View */}
+              <div className="hidden md:block">
+                <div className="bg-background border rounded-lg overflow-hidden">
+                  <div className="bg-muted/50 px-6 py-3 border-b">
+                    <div className="grid grid-cols-8 gap-4 text-sm font-semibold text-foreground">
+                      <div>S.No</div>
+                      <div>Item Name</div>
+                      <div>Quantity</div>
+                      <div>A/U</div>
+                      <div>Current Stock</div>
+                      <div>Stock After</div>
+                      <div>Remarks</div>
+                      <div>Action</div>
+                    </div>
                   </div>
-
-                  {/* Items Table Header */}
-                  <div className="grid grid-cols-12 gap-3 text-sm font-semibold text-muted-foreground border-b pb-3 mb-4">
-                    <div className="col-span-1 text-center">S.No</div>
-                    <div className="col-span-3 text-left">Item Name</div>
-                    <div className="col-span-1 text-center">Quantity</div>
-                    <div className="col-span-1 text-center">A/U</div>
-                    <div className="col-span-1 text-center">Current Stock</div>
-                    <div className="col-span-1 text-center">Stock After</div>
-                    <div className="col-span-3 text-left">Remarks</div>
-                    <div className="col-span-1 text-center">Action</div>
-                  </div>
-
-                  <div className="grid grid-cols-12 gap-3 items-end">
-                    {/* Serial Number */}
-                    <div className="col-span-1 space-y-2">
-                      <div className="h-12 flex items-center justify-center bg-muted rounded-md font-semibold text-foreground border">
-                        {index + 1}
+                  
+                  {items.map((item, index) => (
+                    <div key={index} className="px-6 py-4 border-b last:border-b-0">
+                      <div className="grid grid-cols-8 gap-4 items-center">
+                        {/* S.No */}
+                        <div className="text-sm font-medium">{index + 1}</div>
+                        
+                        {/* Item Name */}
+                        <div className="space-y-1">
+                          <Popover open={openItemDropdowns[index] || false} onOpenChange={(open) => setItemDropdownOpen(index, open)}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={openItemDropdowns[index] || false}
+                                className="w-full justify-between text-left font-normal h-10"
+                              >
+                                {item.itemName || "Select item..."}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[300px] p-0">
+                              <Command>
+                                <CommandInput placeholder="Search items..." />
+                                <CommandList>
+                                  <CommandEmpty>No item found.</CommandEmpty>
+                                  <CommandGroup>
+                                    {itemNames.map((itemName) => (
+                                      <CommandItem
+                                        key={itemName}
+                                        value={itemName}
+                                        onSelect={() => {
+                                          handleItemChange(index, "itemName", itemName);
+                                          setItemDropdownOpen(index, false);
+                                        }}
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            item.itemName === itemName ? "opacity-100" : "opacity-0"
+                                          )}
+                                        />
+                                        {itemName}
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                        
+                        {/* Quantity */}
+                        <div className="space-y-1">
+                          <Input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
+                            className="h-10"
+                            placeholder="0"
+                            min="0"
+                          />
+                        </div>
+                        
+                        {/* A/U */}
+                        <div className="space-y-1">
+                          <Input
+                            value={item.au}
+                            onChange={(e) => handleItemChange(index, "au", e.target.value)}
+                            className="h-10"
+                            placeholder="Unit"
+                          />
+                        </div>
+                        
+                        {/* Current Stock */}
+                        <div className="text-sm font-medium bg-muted/50 px-3 py-2 rounded text-center">
+                          {item.currentStock || 0}
+                        </div>
+                        
+                        {/* Stock After */}
+                        <div className="text-sm font-medium bg-primary/10 px-3 py-2 rounded text-center">
+                          {item.stockAfterPurchase || 0}
+                        </div>
+                        
+                        {/* Remarks */}
+                        <div className="space-y-1">
+                          <Input
+                            value={item.remarks}
+                            onChange={(e) => handleItemChange(index, "remarks", e.target.value)}
+                            className="h-10"
+                            placeholder="Optional"
+                          />
+                        </div>
+                        
+                        {/* Action */}
+                        <div className="flex justify-center">
+                          {items.length > 1 && (
+                            <Button 
+                              type="button" 
+                              onClick={() => removeItem(index)}
+                              variant="outline" 
+                              size="sm"
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
+                  ))}
+                </div>
+              </div>
 
-                    {/* Item Name */}
-                    <div className="col-span-3 space-y-2">
-                      <Popover open={openItemDropdowns[index] || false} onOpenChange={(open) => setItemDropdownOpen(index, open)}>
-                        <PopoverTrigger asChild>
-                          <div className="relative">
-                            <Input
-                              value={item.itemName}
-                              onChange={(e) => handleItemChange(index, "itemName", e.target.value)}
-                              onClick={() => setItemDropdownOpen(index, true)}
-                              className="modern-input h-12 pr-10"
-                              placeholder="Enter product name"
-                            />
-                            <ChevronsUpDown className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 opacity-50" />
-                          </div>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-full p-0 modern-card border-none" align="start">
-                          <Command>
-                            <CommandInput 
-                              placeholder="Search items..." 
-                              value={item.itemName}
-                              onValueChange={(value) => handleItemChange(index, "itemName", value)}
-                            />
-                            <CommandList>
-                              <CommandEmpty>No item found.</CommandEmpty>
-                              <CommandGroup>
-                                {itemNames
-                                  .filter(itemName => 
-                                    itemName.toLowerCase().includes(item.itemName.toLowerCase())
-                                  )
-                                  .map((itemName) => (
-                                  <CommandItem
-                                    key={itemName}
-                                    value={itemName}
-                                    onSelect={(currentValue) => {
-                                      handleItemChange(index, "itemName", currentValue);
-                                      setItemDropdownOpen(index, false);
-                                    }}
-                                    className="focus:bg-primary/10 focus:text-foreground hover:bg-primary/10 hover:text-foreground"
-                                  >
-                                    <Check
-                                      className={cn(
-                                        "mr-2 h-4 w-4",
-                                        item.itemName === itemName ? "opacity-100" : "opacity-0"
-                                      )}
-                                    />
-                                    {itemName}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-
-                    {/* Quantity */}
-                    <div className="col-span-1 space-y-2">
-                      <Input
-                        id={`quantity-${index}`}
-                        type="number"
-                        min="1"
-                        value={item.quantity}
-                        onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
-                        className="modern-input h-12"
-                        placeholder="Enter quantity"
-                      />
-                    </div>
-
-                    {/* A/U */}
-                    <div className="col-span-1 space-y-2">
-                      <Input
-                        id={`au-${index}`}
-                        value={item.au}
-                        onChange={(e) => handleItemChange(index, "au", e.target.value)}
-                        className="modern-input h-12"
-                        placeholder="Enter A/U"
-                      />
-                    </div>
-
-                    {/* Current Stock */}
-                    <div className="col-span-1 space-y-2">
-                      <div className="h-12 flex items-center justify-center bg-muted rounded-md font-semibold text-foreground border">
-                        {item.currentStock || 0}
-                      </div>
-                    </div>
-
-                    {/* Stock After Purchase */}
-                    <div className="col-span-1 space-y-2">
-                      <div className="h-12 flex items-center justify-center bg-muted rounded-md font-semibold text-foreground border">
-                        {item.stockAfterPurchase || 0}
-                      </div>
-                    </div>
-
-                    {/* Remarks */}
-                    <div className="col-span-3 space-y-2">
-                      <Input
-                        id={`remarks-${index}`}
-                        value={item.remarks}
-                        onChange={(e) => handleItemChange(index, "remarks", e.target.value)}
-                        className="modern-input h-12"
-                        placeholder="Enter remarks"
-                      />
-                    </div>
-
-                    {/* Action */}
-                    <div className="col-span-1 flex items-center justify-center">
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4">
+                {items.map((item, index) => (
+                  <div key={index} className="bg-background border rounded-lg p-4 space-y-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-md font-medium text-foreground">Item {index + 1}</h4>
                       {items.length > 1 && (
                         <Button 
                           type="button" 
                           onClick={() => removeItem(index)}
                           variant="ghost"
-                          size="icon"
-                          className="text-destructive hover:text-destructive h-10 w-10"
+                          size="sm"
+                          className="text-destructive hover:text-destructive"
                         >
                           <X className="h-4 w-4" />
                         </Button>
                       )}
                     </div>
+
+                    {/* Mobile Form Fields */}
+                    <div className="space-y-4">
+                      {/* Item Name */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-foreground">Item Name</Label>
+                        <Popover open={openItemDropdowns[index] || false} onOpenChange={(open) => setItemDropdownOpen(index, open)}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={openItemDropdowns[index] || false}
+                              className="w-full justify-between text-left font-normal h-12"
+                            >
+                              {item.itemName || "Select item..."}
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0">
+                            <Command>
+                              <CommandInput placeholder="Search items..." />
+                              <CommandList>
+                                <CommandEmpty>No item found.</CommandEmpty>
+                                <CommandGroup>
+                                  {itemNames.map((itemName) => (
+                                    <CommandItem
+                                      key={itemName}
+                                      value={itemName}
+                                      onSelect={() => {
+                                        handleItemChange(index, "itemName", itemName);
+                                        setItemDropdownOpen(index, false);
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          item.itemName === itemName ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      {itemName}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+
+                      {/* Quantity and A/U Row */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-semibold text-foreground">Quantity</Label>
+                          <Input
+                            type="number"
+                            value={item.quantity}
+                            onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
+                            className="h-12"
+                            placeholder="0"
+                            min="0"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-semibold text-foreground">A/U</Label>
+                          <Input
+                            value={item.au}
+                            onChange={(e) => handleItemChange(index, "au", e.target.value)}
+                            className="h-12"
+                            placeholder="Unit"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Stock Information Row */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-semibold text-foreground">Current Stock</Label>
+                          <div className="h-12 flex items-center justify-center bg-muted/50 rounded border text-sm font-medium">
+                            {item.currentStock || 0}
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-sm font-semibold text-foreground">Stock After</Label>
+                          <div className="h-12 flex items-center justify-center bg-primary/10 rounded border text-sm font-medium">
+                            {item.stockAfterPurchase || 0}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Remarks */}
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-foreground">Remarks</Label>
+                        <Input
+                          value={item.remarks}
+                          onChange={(e) => handleItemChange(index, "remarks", e.target.value)}
+                          className="h-12"
+                          placeholder="Optional"
+                        />
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
 
             {/* Submit Button */}
