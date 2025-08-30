@@ -128,7 +128,10 @@ const IssueForm = () => {
         if (response.ok) {
           const data = await response.json();
           console.log('Loaded master data:', data);
-          setItemNames(data.itemNames || []);
+          
+          // Remove duplicates from item names to fix React key warning
+          const uniqueItemNames = [...new Set((data.itemNames || []) as string[])];
+          setItemNames(uniqueItemNames);
           setStockData(data.stockData || {});
         }
       } catch (error) {
@@ -142,7 +145,9 @@ const IssueForm = () => {
           
           if (response.ok) {
             const data = await response.json();
-            setItemNames(data || []);
+            // Remove duplicates here too
+            const uniqueItemNames = [...new Set((data || []) as string[])];
+            setItemNames(uniqueItemNames);
           }
         } catch (fallbackError) {
           console.log('Could not load item names:', fallbackError);
@@ -457,18 +462,7 @@ const IssueForm = () => {
 
             {/* Items Section */}
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-foreground">Items Required</h3>
-                <Button 
-                  type="button" 
-                  onClick={addItem}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Another Item
-                </Button>
-              </div>
+              <h3 className="text-lg font-semibold text-foreground">Items Required</h3>
 
               {/* Desktop Table View */}
               <div className="hidden md:block">
@@ -512,9 +506,9 @@ const IssueForm = () => {
                                 <CommandList>
                                   <CommandEmpty>No item found.</CommandEmpty>
                                   <CommandGroup>
-                                    {itemNames.map((itemName) => (
+                                    {itemNames.map((itemName, idx) => (
                                       <CommandItem
-                                        key={itemName}
+                                        key={`${itemName}-${idx}`}
                                         value={itemName}
                                         onSelect={() => {
                                           handleItemChange(index, "itemName", itemName);
@@ -641,9 +635,9 @@ const IssueForm = () => {
                               <CommandList>
                                 <CommandEmpty>No item found.</CommandEmpty>
                                 <CommandGroup>
-                                  {itemNames.map((itemName) => (
+                                  {itemNames.map((itemName, idx) => (
                                     <CommandItem
-                                      key={itemName}
+                                      key={`mobile-${itemName}-${idx}`}
                                       value={itemName}
                                       onSelect={() => {
                                         handleItemChange(index, "itemName", itemName);
@@ -719,6 +713,19 @@ const IssueForm = () => {
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Add Another Item Button - Positioned after items */}
+              <div className="flex justify-center">
+                <Button 
+                  type="button" 
+                  onClick={addItem}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Another Item
+                </Button>
               </div>
             </div>
 
