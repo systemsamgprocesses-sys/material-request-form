@@ -479,7 +479,7 @@ const IssueForm = () => {
                   <div className="bg-muted/50 px-6 py-3 border-b">
                     <div className="grid grid-cols-8 gap-4 text-sm font-semibold text-foreground">
                       <div>S.No</div>
-                      <div>Item Name</div>
+                      <div className="col-span-2">Item Name</div>
                       <div>Quantity</div>
                       <div>A/U</div>
                       <div>Current Stock</div>
@@ -496,22 +496,22 @@ const IssueForm = () => {
                         <div className="text-sm font-medium">{index + 1}</div>
                         
                         {/* Item Name */}
-                        <div className="space-y-1">
+                        <div className="col-span-2 space-y-1">
                           <Popover open={openComboboxes[index]} onOpenChange={() => toggleCombobox(index)}>
                             <PopoverTrigger asChild>
                               <Button
                                 variant="outline"
                                 role="combobox"
                                 aria-expanded={openComboboxes[index]}
-                                className="h-10 w-full justify-between text-left font-normal"
+                                className="h-10 w-full justify-between text-left font-normal overflow-hidden"
                               >
-                                <span className="truncate">
+                                <span className="truncate flex-1 text-left">
                                   {item.itemName || "Select item..."}
                                 </span>
                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                               </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-full p-0" align="start">
+                            <PopoverContent className="w-[400px] p-0" align="start">
                               <Command>
                                 <CommandInput placeholder="Search items..." className="h-9" />
                                 <CommandList>
@@ -530,7 +530,7 @@ const IssueForm = () => {
                                             item.itemName === itemName ? "opacity-100" : "opacity-0"
                                           )}
                                         />
-                                        <span className="truncate">{itemName}</span>
+                                        <span className="flex-1">{itemName}</span>
                                       </CommandItem>
                                     ))}
                                   </CommandGroup>
