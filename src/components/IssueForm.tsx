@@ -3,9 +3,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import amgLogo from "@/assets/amg-logo-new.png";
 
@@ -44,6 +46,7 @@ const IssueForm = () => {
   const [itemNames, setItemNames] = useState<string[]>([]);
   const [stockData, setStockData] = useState<{[key: string]: number}>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [openComboboxes, setOpenComboboxes] = useState<{[key: number]: boolean}>({});
   
   const [oneTimeData, setOneTimeData] = useState<OneTimeData>({
     storeName: "",
@@ -199,6 +202,21 @@ const IssueForm = () => {
     }
     
     setItems(newItems);
+  };
+
+  const toggleCombobox = (index: number) => {
+    setOpenComboboxes(prev => ({
+      ...prev,
+      [index]: !prev[index]
+    }));
+  };
+
+  const selectItem = (index: number, itemName: string) => {
+    handleItemChange(index, "itemName", itemName);
+    setOpenComboboxes(prev => ({
+      ...prev,
+      [index]: false
+    }));
   };
 
   const addItem = () => {
@@ -479,18 +497,47 @@ const IssueForm = () => {
                         
                         {/* Item Name */}
                         <div className="space-y-1">
-                          <Select value={item.itemName} onValueChange={(value) => handleItemChange(index, "itemName", value)}>
-                            <SelectTrigger className="h-10">
-                              <SelectValue placeholder="Select item..." />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-[200px] overflow-y-auto">
-                              {itemNames.map((itemName, idx) => (
-                                <SelectItem key={`desktop-${idx}-${itemName}`} value={itemName}>
-                                  {itemName}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                          <Popover open={openComboboxes[index]} onOpenChange={() => toggleCombobox(index)}>
+                            <PopoverTrigger asChild>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                aria-expanded={openComboboxes[index]}
+                                className="h-10 w-full justify-between text-left font-normal"
+                              >
+                                <span className="truncate">
+                                  {item.itemName || "Select item..."}
+                                </span>
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-full p-0" align="start">
+                              <Command>
+                                <CommandInput placeholder="Search items..." className="h-9" />
+                                <CommandList>
+                                  <CommandEmpty>No item found.</CommandEmpty>
+                                  <CommandGroup>
+                                    {itemNames.map((itemName, idx) => (
+                                      <CommandItem
+                                        key={`desktop-${idx}-${itemName}`}
+                                        value={itemName}
+                                        onSelect={() => selectItem(index, itemName)}
+                                        className="cursor-pointer"
+                                      >
+                                        <Check
+                                          className={cn(
+                                            "mr-2 h-4 w-4",
+                                            item.itemName === itemName ? "opacity-100" : "opacity-0"
+                                          )}
+                                        />
+                                        <span className="truncate">{itemName}</span>
+                                      </CommandItem>
+                                    ))}
+                                  </CommandGroup>
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
                         </div>
                         
                         {/* Quantity */}
@@ -579,18 +626,47 @@ const IssueForm = () => {
                       {/* Item Name */}
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold text-foreground">Item Name</Label>
-                        <Select value={item.itemName} onValueChange={(value) => handleItemChange(index, "itemName", value)}>
-                          <SelectTrigger className="h-12">
-                            <SelectValue placeholder="Select item..." />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-[200px] overflow-y-auto">
-                            {itemNames.map((itemName, idx) => (
-                              <SelectItem key={`mobile-${idx}-${itemName}`} value={itemName}>
-                                {itemName}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Popover open={openComboboxes[index]} onOpenChange={() => toggleCombobox(index)}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              role="combobox"
+                              aria-expanded={openComboboxes[index]}
+                              className="h-12 w-full justify-between text-left font-normal"
+                            >
+                              <span className="truncate">
+                                {item.itemName || "Select item..."}
+                              </span>
+                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-full p-0" align="start">
+                            <Command>
+                              <CommandInput placeholder="Search items..." className="h-9" />
+                              <CommandList>
+                                <CommandEmpty>No item found.</CommandEmpty>
+                                <CommandGroup>
+                                  {itemNames.map((itemName, idx) => (
+                                    <CommandItem
+                                      key={`mobile-${idx}-${itemName}`}
+                                      value={itemName}
+                                      onSelect={() => selectItem(index, itemName)}
+                                      className="cursor-pointer"
+                                    >
+                                      <Check
+                                        className={cn(
+                                          "mr-2 h-4 w-4",
+                                          item.itemName === itemName ? "opacity-100" : "opacity-0"
+                                        )}
+                                      />
+                                      <span className="truncate">{itemName}</span>
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
                       </div>
 
                       {/* Quantity and A/U Row */}
