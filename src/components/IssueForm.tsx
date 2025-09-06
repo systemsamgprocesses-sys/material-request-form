@@ -481,20 +481,49 @@ const IssueForm = () => {
                         <div className="text-sm font-medium">{index + 1}</div>
                         
                         {/* Item Name */}
-                        <div className="space-y-1">
-                          <Select value={item.itemName} onValueChange={(value) => handleItemChange(index, "itemName", value)}>
-                            <SelectTrigger className="h-10">
-                              <SelectValue placeholder="Select item..." />
-                            </SelectTrigger>
-                            <SelectContent className="max-h-[200px] overflow-y-auto">
-                              {itemNames.map((itemName, idx) => (
-                                <SelectItem key={`desktop-${idx}-${itemName}`} value={itemName}>
-                                  {itemName}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                         <div className="space-y-1">
+                           <Popover open={openPopovers[index]} onOpenChange={(open) => setOpenPopovers(prev => ({ ...prev, [index]: open }))}>
+                             <PopoverTrigger asChild>
+                               <Button
+                                 variant="outline"
+                                 role="combobox"
+                                 aria-expanded={openPopovers[index]}
+                                 className="h-10 w-full justify-between"
+                               >
+                                 {item.itemName || "Select item..."}
+                                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                               </Button>
+                             </PopoverTrigger>
+                             <PopoverContent className="w-[300px] p-0">
+                               <Command>
+                                 <CommandInput placeholder="Search items..." />
+                                 <CommandList>
+                                   <CommandEmpty>No item found.</CommandEmpty>
+                                   <CommandGroup>
+                                     {itemNames.map((name) => (
+                                       <CommandItem
+                                         key={name}
+                                         value={name}
+                                         onSelect={() => {
+                                           handleItemChange(index, "itemName", name);
+                                           setOpenPopovers(prev => ({ ...prev, [index]: false }));
+                                         }}
+                                       >
+                                         <Check
+                                           className={cn(
+                                             "mr-2 h-4 w-4",
+                                             item.itemName === name ? "opacity-100" : "opacity-0"
+                                           )}
+                                         />
+                                         {name}
+                                       </CommandItem>
+                                     ))}
+                                   </CommandGroup>
+                                 </CommandList>
+                               </Command>
+                             </PopoverContent>
+                           </Popover>
+                         </div>
                         
                         {/* Quantity */}
                         <div className="space-y-1">
