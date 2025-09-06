@@ -121,7 +121,7 @@ const IssueForm = () => {
   useEffect(() => {
     const loadMasterData = async () => {
       try {
-        const response = await fetch('https://script.google.com/macros/s/AKfycbw4a8syIT0aLF5DGVUIINWfqk1lXx36UOs-jGSLgOGKzAjl_0mpsb6sa7rVA-hQimGt6Q/exec?action=getMasterData', {
+        const response = await fetch('https://script.google.com/macros/s/AKfycbxUgvb1L4rQNVtOLgO0LfNNDVy10EQD-HmeyC7uYBkUetaWaJ1YbbumtBphNJst9y0qAg/exec?action=getMasterData', {
           method: 'GET',
           mode: 'cors'
         });
