@@ -462,7 +462,7 @@ const IssueForm = () => {
               <div className="hidden md:block">
                 <div className="bg-background border rounded-lg overflow-hidden">
                   <div className="bg-muted/50 px-6 py-3 border-b">
-                    <div className="grid grid-cols-8 gap-4 text-sm font-semibold text-foreground">
+                    <div className="grid gap-4 text-sm font-semibold text-foreground" style={{gridTemplateColumns: "60px 300px 120px 80px 120px 120px 200px 80px"}}>
                       <div>S.No</div>
                       <div>Item Name</div>
                       <div>Quantity</div>
@@ -476,7 +476,7 @@ const IssueForm = () => {
                   
                   {items.map((item, index) => (
                     <div key={index} className="px-6 py-4 border-b last:border-b-0">
-                      <div className="grid grid-cols-8 gap-4 items-center">
+                      <div className="grid gap-4 items-center" style={{gridTemplateColumns: "60px 300px 120px 80px 120px 120px 200px 80px"}}>
                         {/* S.No */}
                         <div className="text-sm font-medium">{index + 1}</div>
                         
@@ -488,19 +488,21 @@ const IssueForm = () => {
                                  variant="outline"
                                  role="combobox"
                                  aria-expanded={openPopovers[index]}
-                                 className="h-10 w-full justify-between"
+                                 className="h-10 w-full justify-between text-left font-normal"
                                >
-                                 {item.itemName || "Select item..."}
+                                 <span className="truncate">
+                                   {item.itemName || "Select item..."}
+                                 </span>
                                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                </Button>
                              </PopoverTrigger>
-                             <PopoverContent className="w-[300px] p-0">
+                             <PopoverContent className="w-[400px] p-0">
                                <Command>
                                  <CommandInput placeholder="Search items..." />
                                  <CommandList>
                                    <CommandEmpty>No item found.</CommandEmpty>
                                    <CommandGroup>
-                                     {itemNames.map((name) => (
+                                     {itemNames.filter(name => name.trim()).map((name) => (
                                        <CommandItem
                                          key={name}
                                          value={name}
@@ -515,7 +517,7 @@ const IssueForm = () => {
                                              item.itemName === name ? "opacity-100" : "opacity-0"
                                            )}
                                          />
-                                         {name}
+                                         <span className="text-sm">{name}</span>
                                        </CommandItem>
                                      ))}
                                    </CommandGroup>
@@ -524,18 +526,18 @@ const IssueForm = () => {
                              </PopoverContent>
                            </Popover>
                          </div>
-                        
-                        {/* Quantity */}
-                        <div className="space-y-1">
-                          <Input
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
-                            className="h-10"
-                            placeholder="0"
-                            min="0"
-                          />
-                        </div>
+                         
+                         {/* Quantity */}
+                         <div className="space-y-1">
+                           <Input
+                             type="number"
+                             value={item.quantity}
+                             onChange={(e) => handleItemChange(index, "quantity", e.target.value)}
+                             className="h-10 text-center"
+                             placeholder="0"
+                             min="0"
+                           />
+                         </div>
                         
                         {/* A/U */}
                         <div className="space-y-1">
