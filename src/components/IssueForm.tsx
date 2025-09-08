@@ -13,6 +13,7 @@ import amgLogo from "@/assets/amg-logo-new.png";
 
 interface ItemData {
   itemName: string;
+  customItemName?: string;
   quantity: string;
   au: string;
   remarks: string;
@@ -40,6 +41,9 @@ const stores = [
   "Maurya Green",
   "ONE AMG"
 ];
+
+const units = ["ft", "PC", "meter", "NOS", "CMs"];
+const demandTypes = ["normal", "urgent"];
 
 const IssueForm = () => {
   const { toast } = useToast();
@@ -132,7 +136,8 @@ const IssueForm = () => {
           
           // Remove duplicates from item names to fix React key warning
           const uniqueItemNames = [...new Set((data.itemNames || []) as string[])];
-          setItemNames(uniqueItemNames);
+          // Add Miscellaneous option at the beginning
+          setItemNames(["Miscellaneous", ...uniqueItemNames]);
           setStockData(data.stockData || {});
         }
       } catch (error) {
@@ -185,16 +190,23 @@ const IssueForm = () => {
     const newItems = [...items];
     newItems[index] = { ...newItems[index], [field]: value };
     
-    // Calculate stock information when quantity changes
-    if ((field === 'quantity' || field === 'itemName') && newItems[index].itemName) {
+    // Handle Miscellaneous item selection
+    if (field === 'itemName' && value === 'Miscellaneous') {
+      newItems[index].currentStock = 0;
+      newItems[index].stockAfterPurchase = 0;
+      newItems[index].customItemName = '';
+    }
+    
+    // Calculate stock information when quantity changes (skip for Miscellaneous)
+    if ((field === 'quantity' || field === 'itemName') && newItems[index].itemName && newItems[index].itemName !== 'Miscellaneous') {
       const currentStock = stockData[newItems[index].itemName] || 0;
       const quantity = parseInt(value) || 0;
       newItems[index].currentStock = currentStock;
       newItems[index].stockAfterPurchase = currentStock - quantity;
     }
     
-    // Update stock when item name changes
-    if (field === 'itemName') {
+    // Update stock when item name changes (skip for Miscellaneous)
+    if (field === 'itemName' && value !== 'Miscellaneous') {
       const currentStock = stockData[value] || 0;
       const quantity = parseInt(newItems[index].quantity) || 0;
       newItems[index].currentStock = currentStock;
@@ -429,13 +441,18 @@ const IssueForm = () => {
                   <Label htmlFor="natureOfDemand" className="text-sm font-semibold text-foreground">
                     Nature of Demand
                   </Label>
-                  <Input
-                    id="natureOfDemand"
-                    value={oneTimeData.natureOfDemand}
-                    onChange={(e) => handleOneTimeDataChange("natureOfDemand", e.target.value)}
-                    className="modern-input h-12"
-                    placeholder="Enter nature of demand"
-                  />
+                  <Select value={oneTimeData.natureOfDemand} onValueChange={(value) => handleOneTimeDataChange("natureOfDemand", value)}>
+                    <SelectTrigger className="modern-input h-12">
+                      <SelectValue placeholder="Select demand type" />
+                    </SelectTrigger>
+                    <SelectContent className="modern-card border-none">
+                      {demandTypes.map((type) => (
+                        <SelectItem key={type} value={type} className="focus:bg-primary/10 focus:text-foreground hover:bg-primary/10 hover:text-foreground capitalize">
+                          {type}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
@@ -491,7 +508,9 @@ const IssueForm = () => {
                                  className="h-10 w-full justify-between text-left font-normal"
                                >
                                  <span className="truncate">
-                                   {item.itemName || "Select item..."}
+                                   {item.itemName === 'Miscellaneous' && item.customItemName 
+                                     ? `Miscellaneous: ${item.customItemName}`
+                                     : item.itemName || "Select item..."}
                                  </span>
                                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                </Button>
@@ -525,6 +544,16 @@ const IssueForm = () => {
                                </Command>
                              </PopoverContent>
                            </Popover>
+                           
+                           {/* Custom Item Name Input for Miscellaneous */}
+                           {item.itemName === 'Miscellaneous' && (
+                             <Input
+                               value={item.customItemName || ''}
+                               onChange={(e) => handleItemChange(index, "customItemName", e.target.value)}
+                               className="h-10 mt-2"
+                               placeholder="Enter custom item name"
+                             />
+                           )}
                          </div>
                          
                          {/* Quantity */}
@@ -539,15 +568,21 @@ const IssueForm = () => {
                            />
                          </div>
                         
-                        {/* A/U */}
-                        <div className="space-y-1">
-                          <Input
-                            value={item.au}
-                            onChange={(e) => handleItemChange(index, "au", e.target.value)}
-                            className="h-10"
-                            placeholder="Unit"
-                          />
-                        </div>
+                         {/* A/U */}
+                         <div className="space-y-1">
+                           <Select value={item.au} onValueChange={(value) => handleItemChange(index, "au", value)}>
+                             <SelectTrigger className="h-10">
+                               <SelectValue placeholder="Unit" />
+                             </SelectTrigger>
+                             <SelectContent className="modern-card border-none">
+                               {units.map((unit) => (
+                                 <SelectItem key={unit} value={unit} className="focus:bg-primary/10 focus:text-foreground hover:bg-primary/10 hover:text-foreground">
+                                   {unit}
+                                 </SelectItem>
+                               ))}
+                             </SelectContent>
+                           </Select>
+                         </div>
                         
                         {/* Current Stock */}
                         <div className="text-sm font-medium bg-muted/50 px-3 py-2 rounded text-center">
@@ -621,7 +656,9 @@ const IssueForm = () => {
                                aria-expanded={openPopovers[`mobile-${index}`]}
                                className="h-12 w-full justify-between"
                              >
-                               {item.itemName || "Select item..."}
+                               {item.itemName === 'Miscellaneous' && item.customItemName 
+                                 ? `Miscellaneous: ${item.customItemName}`
+                                 : item.itemName || "Select item..."}
                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                              </Button>
                            </PopoverTrigger>
@@ -654,6 +691,16 @@ const IssueForm = () => {
                              </Command>
                            </PopoverContent>
                          </Popover>
+                         
+                         {/* Custom Item Name Input for Miscellaneous */}
+                         {item.itemName === 'Miscellaneous' && (
+                           <Input
+                             value={item.customItemName || ''}
+                             onChange={(e) => handleItemChange(index, "customItemName", e.target.value)}
+                             className="h-12 mt-2"
+                             placeholder="Enter custom item name"
+                           />
+                         )}
                        </div>
 
                       {/* Quantity and A/U Row */}
@@ -669,15 +716,21 @@ const IssueForm = () => {
                             min="0"
                           />
                         </div>
-                        <div className="space-y-2">
-                          <Label className="text-sm font-semibold text-foreground">A/U</Label>
-                          <Input
-                            value={item.au}
-                            onChange={(e) => handleItemChange(index, "au", e.target.value)}
-                            className="h-12"
-                            placeholder="Unit"
-                          />
-                        </div>
+                         <div className="space-y-2">
+                           <Label className="text-sm font-semibold text-foreground">A/U</Label>
+                           <Select value={item.au} onValueChange={(value) => handleItemChange(index, "au", value)}>
+                             <SelectTrigger className="h-12">
+                               <SelectValue placeholder="Unit" />
+                             </SelectTrigger>
+                             <SelectContent className="modern-card border-none">
+                               {units.map((unit) => (
+                                 <SelectItem key={unit} value={unit} className="focus:bg-primary/10 focus:text-foreground hover:bg-primary/10 hover:text-foreground">
+                                   {unit}
+                                 </SelectItem>
+                               ))}
+                             </SelectContent>
+                           </Select>
+                         </div>
                       </div>
 
                       {/* Stock Information Row */}
