@@ -190,7 +190,7 @@ const IssueForm = () => {
       const currentStock = stockData[newItems[index].itemName] || 0;
       const quantity = parseInt(value) || 0;
       newItems[index].currentStock = currentStock;
-      newItems[index].stockAfterPurchase = currentStock + quantity;
+      newItems[index].stockAfterPurchase = currentStock - quantity;
     }
     
     // Update stock when item name changes
@@ -198,7 +198,7 @@ const IssueForm = () => {
       const currentStock = stockData[value] || 0;
       const quantity = parseInt(newItems[index].quantity) || 0;
       newItems[index].currentStock = currentStock;
-      newItems[index].stockAfterPurchase = currentStock + quantity;
+      newItems[index].stockAfterPurchase = currentStock - quantity;
     }
     
     setItems(newItems);
