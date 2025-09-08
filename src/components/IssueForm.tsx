@@ -50,7 +50,7 @@ const IssueForm = () => {
   const [itemNames, setItemNames] = useState<string[]>([]);
   const [stockData, setStockData] = useState<{[key: string]: number}>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [openPopovers, setOpenPopovers] = useState<{[key: number]: boolean}>({});
+  const [openPopovers, setOpenPopovers] = useState<{[key: number | string]: boolean}>({});
   
   const [oneTimeData, setOneTimeData] = useState<OneTimeData>({
     storeName: "",
@@ -217,6 +217,7 @@ const IssueForm = () => {
   };
 
   const addItem = () => {
+    const newItemIndex = items.length;
     setItems([...items, {
       itemName: "",
       quantity: "",
@@ -225,6 +226,13 @@ const IssueForm = () => {
       currentStock: 0,
       stockAfterPurchase: 0
     }]);
+    
+    // Initialize popover states for new item
+    setOpenPopovers(prev => ({
+      ...prev,
+      [newItemIndex]: false,
+      [`mobile-${newItemIndex}`]: false
+    }));
   };
 
   const removeItem = (index: number) => {
@@ -255,6 +263,10 @@ const IssueForm = () => {
       .map(item => ({
         ...oneTimeData,
         ...item,
+        // Use custom item name for miscellaneous items
+        itemName: item.itemName === 'Miscellaneous' && item.customItemName 
+          ? `Miscellaneous: ${item.customItemName}`
+          : item.itemName,
         timestamp: new Date().toISOString()
       }));
 
