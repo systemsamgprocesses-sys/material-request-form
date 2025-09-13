@@ -298,23 +298,31 @@ const IssueForm = () => {
       const doc = new jsPDF();
       
       // Add company logo and header
+      try {
+        // Add logo image
+        doc.addImage(amgLogo, 'PNG', 20, 10, 30, 15);
+      } catch (logoError) {
+        console.warn('Could not add logo to PDF:', logoError);
+      }
+      
+      // Add green header background
       doc.setFillColor(34, 197, 94); // Green color
-      doc.rect(0, 0, 210, 30, 'F');
+      doc.rect(55, 10, 135, 15, 'F');
       
       doc.setTextColor(255, 255, 255);
       doc.setFontSize(24);
       doc.setFont('helvetica', 'bold');
-      doc.text('AMG REALITY', 20, 20);
+      doc.text('AMG REALITY', 60, 20);
       
       doc.setFontSize(12);
       doc.setFont('helvetica', 'normal');
-      doc.text('Indent/Issue Request Form', 20, 27);
+      doc.text('Indent/Issue Request Form', 60, 24);
       
       // Reset text color
       doc.setTextColor(0, 0, 0);
       
       // Add form details
-      let yPos = 50;
+      let yPos = 45;
       const oneTimeInfo = submissionData[0];
       
       if (!oneTimeInfo) {
@@ -996,35 +1004,6 @@ const IssueForm = () => {
 
             {/* Submit Button */}
             <div className="flex justify-end gap-4 pt-6">
-              {/* Test Download Button for debugging */}
-              <Button 
-                type="button" 
-                onClick={() => {
-                  console.log('Test download clicked');
-                  const testData = [{
-                    indentNumber: 'TEST-001',
-                    storeName: 'Test Store',
-                    requestedBy: 'Test User',
-                    projectName: 'Test Project',
-                    storeRequiredByDate: new Date().toISOString().split('T')[0],
-                    natureOfDemand: 'normal',
-                    byWhomOrders: 'Test Order',
-                    purpose: 'Test Purpose',
-                    itemName: 'Test Item',
-                    quantity: '5',
-                    au: 'PC',
-                    currentStock: 10,
-                    stockAfterPurchase: 5,
-                    remarks: 'Test remarks'
-                  }];
-                  generatePDF(testData);
-                }}
-                variant="secondary"
-                className="px-6 py-3 text-base font-semibold h-12"
-              >
-                Test PDF Download
-              </Button>
-
               <Button 
                 type="submit" 
                 disabled={isSubmitting}
