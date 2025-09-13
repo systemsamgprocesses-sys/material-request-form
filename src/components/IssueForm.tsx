@@ -292,113 +292,147 @@ const IssueForm = () => {
   };
 
   const generatePDF = (submissionData: any[]) => {
-    const doc = new jsPDF();
-    
-    // Add company logo and header
-    doc.setFillColor(34, 197, 94); // Green color
-    doc.rect(0, 0, 210, 30, 'F');
-    
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(24);
-    doc.setFont('helvetica', 'bold');
-    doc.text('AMG REALITY', 20, 20);
-    
-    doc.setFontSize(12);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Indent/Issue Request Form', 20, 27);
-    
-    // Reset text color
-    doc.setTextColor(0, 0, 0);
-    
-    // Add form details
-    let yPos = 50;
-    const oneTimeInfo = submissionData[0];
-    
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Request Details', 20, yPos);
-    yPos += 10;
-    
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    
-    // Left column
-    doc.text(`Indent Number: ${oneTimeInfo.indentNumber}`, 20, yPos);
-    doc.text(`Store Name: ${oneTimeInfo.storeName}`, 20, yPos + 6);
-    doc.text(`Requested By: ${oneTimeInfo.requestedBy}`, 20, yPos + 12);
-    doc.text(`Project Name: ${oneTimeInfo.projectName}`, 20, yPos + 18);
-    
-    // Right column
-    doc.text(`Required Date: ${oneTimeInfo.storeRequiredByDate}`, 110, yPos);
-    doc.text(`Nature of Demand: ${oneTimeInfo.natureOfDemand}`, 110, yPos + 6);
-    doc.text(`By Whom Orders: ${oneTimeInfo.byWhomOrders}`, 110, yPos + 12);
-    doc.text(`Gate Pass: ${oneTimeInfo.gatePass || 'N/A'}`, 110, yPos + 18);
-    
-    yPos += 30;
-    
-    // Purpose
-    doc.text(`Purpose: ${oneTimeInfo.purpose}`, 20, yPos);
-    yPos += 15;
-    
-    // Items table
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Items Requested', 20, yPos);
-    yPos += 5;
-    
-    const tableColumns = [
-      'Item Name',
-      'Quantity',
-      'Unit',
-      'Current Stock',
-      'Stock After',
-      'Remarks'
-    ];
-    
-    const tableRows = submissionData.map(item => [
-      item.itemName,
-      item.quantity,
-      item.au,
-      item.currentStock?.toString() || '0',
-      item.stockAfterPurchase?.toString() || '0',
-      item.remarks || ''
-    ]);
-    
-    (doc as any).autoTable({
-      head: [tableColumns],
-      body: tableRows,
-      startY: yPos + 5,
-      styles: {
-        fontSize: 9,
-        cellPadding: 4,
-      },
-      headStyles: {
-        fillColor: [34, 197, 94],
-        textColor: 255,
-        fontStyle: 'bold'
-      },
-      alternateRowStyles: {
-        fillColor: [248, 250, 252]
-      },
-      columnStyles: {
-        0: { cellWidth: 50 },
-        1: { cellWidth: 20 },
-        2: { cellWidth: 20 },
-        3: { cellWidth: 25 },
-        4: { cellWidth: 25 },
-        5: { cellWidth: 50 }
+    try {
+      console.log('Starting PDF generation with data:', submissionData);
+      
+      const doc = new jsPDF();
+      
+      // Add company logo and header
+      doc.setFillColor(34, 197, 94); // Green color
+      doc.rect(0, 0, 210, 30, 'F');
+      
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(24);
+      doc.setFont('helvetica', 'bold');
+      doc.text('AMG REALITY', 20, 20);
+      
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Indent/Issue Request Form', 20, 27);
+      
+      // Reset text color
+      doc.setTextColor(0, 0, 0);
+      
+      // Add form details
+      let yPos = 50;
+      const oneTimeInfo = submissionData[0];
+      
+      if (!oneTimeInfo) {
+        console.error('No submission data found');
+        toast({
+          title: "Error",
+          description: "No data available for PDF generation",
+          variant: "destructive"
+        });
+        return;
       }
-    });
-    
-    // Footer
-    const pageHeight = doc.internal.pageSize.height;
-    doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`Generated on: ${new Date().toLocaleString()}`, 20, pageHeight - 20);
-    doc.text('This is a system generated document.', 20, pageHeight - 15);
-    
-    // Save the PDF
-    doc.save(`AMG_Indent_${oneTimeInfo.indentNumber}_${new Date().toISOString().split('T')[0]}.pdf`);
+      
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Request Details', 20, yPos);
+      yPos += 10;
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      
+      // Left column
+      doc.text(`Indent Number: ${oneTimeInfo.indentNumber || 'N/A'}`, 20, yPos);
+      doc.text(`Store Name: ${oneTimeInfo.storeName || 'N/A'}`, 20, yPos + 6);
+      doc.text(`Requested By: ${oneTimeInfo.requestedBy || 'N/A'}`, 20, yPos + 12);
+      doc.text(`Project Name: ${oneTimeInfo.projectName || 'N/A'}`, 20, yPos + 18);
+      
+      // Right column
+      doc.text(`Required Date: ${oneTimeInfo.storeRequiredByDate || 'N/A'}`, 110, yPos);
+      doc.text(`Nature of Demand: ${oneTimeInfo.natureOfDemand || 'N/A'}`, 110, yPos + 6);
+      doc.text(`By Whom Orders: ${oneTimeInfo.byWhomOrders || 'N/A'}`, 110, yPos + 12);
+      doc.text(`Gate Pass: ${oneTimeInfo.gatePass || 'N/A'}`, 110, yPos + 18);
+      
+      yPos += 30;
+      
+      // Purpose
+      doc.text(`Purpose: ${oneTimeInfo.purpose || 'N/A'}`, 20, yPos);
+      yPos += 15;
+      
+      // Items table
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Items Requested', 20, yPos);
+      yPos += 5;
+      
+      const tableColumns = [
+        'Item Name',
+        'Quantity',
+        'Unit',
+        'Current Stock',
+        'Stock After',
+        'Remarks'
+      ];
+      
+      const tableRows = submissionData.map(item => [
+        item.itemName || 'N/A',
+        item.quantity || '0',
+        item.au || 'N/A',
+        item.currentStock?.toString() || '0',
+        item.stockAfterPurchase?.toString() || '0',
+        item.remarks || ''
+      ]);
+      
+      console.log('Table data prepared:', { tableColumns, tableRows });
+      
+      (doc as any).autoTable({
+        head: [tableColumns],
+        body: tableRows,
+        startY: yPos + 5,
+        styles: {
+          fontSize: 9,
+          cellPadding: 4,
+        },
+        headStyles: {
+          fillColor: [34, 197, 94],
+          textColor: 255,
+          fontStyle: 'bold'
+        },
+        alternateRowStyles: {
+          fillColor: [248, 250, 252]
+        },
+        columnStyles: {
+          0: { cellWidth: 50 },
+          1: { cellWidth: 20 },
+          2: { cellWidth: 20 },
+          3: { cellWidth: 25 },
+          4: { cellWidth: 25 },
+          5: { cellWidth: 50 }
+        }
+      });
+      
+      // Footer
+      const pageHeight = doc.internal.pageSize.height;
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text(`Generated on: ${new Date().toLocaleString()}`, 20, pageHeight - 20);
+      doc.text('This is a system generated document.', 20, pageHeight - 15);
+      
+      // Save the PDF
+      const fileName = `AMG_Indent_${oneTimeInfo.indentNumber || 'REQUEST'}_${new Date().toISOString().split('T')[0]}.pdf`;
+      console.log('Saving PDF with filename:', fileName);
+      
+      doc.save(fileName);
+      
+      console.log('PDF generation completed successfully');
+      
+      toast({
+        title: "Download Completed",
+        description: "Your indent PDF has been downloaded successfully.",
+      });
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Download Error",
+        description: "There was an error generating the PDF. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -457,6 +491,7 @@ const IssueForm = () => {
         document.body.removeChild(form);
 
         // Store submitted data for PDF generation
+        console.log('Storing submission data for PDF:', submissionData);
         setSubmittedData(submissionData);
         setShowDownloadOption(true);
         setShowDownloadDialog(true);
@@ -961,6 +996,35 @@ const IssueForm = () => {
 
             {/* Submit Button */}
             <div className="flex justify-end gap-4 pt-6">
+              {/* Test Download Button for debugging */}
+              <Button 
+                type="button" 
+                onClick={() => {
+                  console.log('Test download clicked');
+                  const testData = [{
+                    indentNumber: 'TEST-001',
+                    storeName: 'Test Store',
+                    requestedBy: 'Test User',
+                    projectName: 'Test Project',
+                    storeRequiredByDate: new Date().toISOString().split('T')[0],
+                    natureOfDemand: 'normal',
+                    byWhomOrders: 'Test Order',
+                    purpose: 'Test Purpose',
+                    itemName: 'Test Item',
+                    quantity: '5',
+                    au: 'PC',
+                    currentStock: 10,
+                    stockAfterPurchase: 5,
+                    remarks: 'Test remarks'
+                  }];
+                  generatePDF(testData);
+                }}
+                variant="secondary"
+                className="px-6 py-3 text-base font-semibold h-12"
+              >
+                Test PDF Download
+              </Button>
+
               <Button 
                 type="submit" 
                 disabled={isSubmitting}
