@@ -7,9 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Plus, X, Check, ChevronsUpDown } from "lucide-react";
+import { Plus, X, Check, ChevronsUpDown, Download } from "lucide-react";
 import { cn } from "@/lib/utils";
 import amgLogo from "@/assets/amg-logo-new.png";
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 interface ItemData {
   itemName: string;
@@ -51,6 +53,8 @@ const IssueForm = () => {
   const [stockData, setStockData] = useState<{[key: string]: number}>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [openPopovers, setOpenPopovers] = useState<{[key: number | string]: boolean}>({});
+  const [submittedData, setSubmittedData] = useState<any[]>([]);
+  const [showDownloadOption, setShowDownloadOption] = useState(false);
   
   const [oneTimeData, setOneTimeData] = useState<OneTimeData>({
     storeName: "",
@@ -241,6 +245,116 @@ const IssueForm = () => {
     }
   };
 
+  const generatePDF = (submissionData: any[]) => {
+    const doc = new jsPDF();
+    
+    // Add company logo and header
+    doc.setFillColor(34, 197, 94); // Green color
+    doc.rect(0, 0, 210, 30, 'F');
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text('AMG REALITY', 20, 20);
+    
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Indent/Issue Request Form', 20, 27);
+    
+    // Reset text color
+    doc.setTextColor(0, 0, 0);
+    
+    // Add form details
+    let yPos = 50;
+    const oneTimeInfo = submissionData[0];
+    
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Request Details', 20, yPos);
+    yPos += 10;
+    
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    
+    // Left column
+    doc.text(`Indent Number: ${oneTimeInfo.indentNumber}`, 20, yPos);
+    doc.text(`Store Name: ${oneTimeInfo.storeName}`, 20, yPos + 6);
+    doc.text(`Requested By: ${oneTimeInfo.requestedBy}`, 20, yPos + 12);
+    doc.text(`Project Name: ${oneTimeInfo.projectName}`, 20, yPos + 18);
+    
+    // Right column
+    doc.text(`Required Date: ${oneTimeInfo.storeRequiredByDate}`, 110, yPos);
+    doc.text(`Nature of Demand: ${oneTimeInfo.natureOfDemand}`, 110, yPos + 6);
+    doc.text(`By Whom Orders: ${oneTimeInfo.byWhomOrders}`, 110, yPos + 12);
+    doc.text(`Gate Pass: ${oneTimeInfo.gatePass || 'N/A'}`, 110, yPos + 18);
+    
+    yPos += 30;
+    
+    // Purpose
+    doc.text(`Purpose: ${oneTimeInfo.purpose}`, 20, yPos);
+    yPos += 15;
+    
+    // Items table
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Items Requested', 20, yPos);
+    yPos += 5;
+    
+    const tableColumns = [
+      'Item Name',
+      'Quantity',
+      'Unit',
+      'Current Stock',
+      'Stock After',
+      'Remarks'
+    ];
+    
+    const tableRows = submissionData.map(item => [
+      item.itemName,
+      item.quantity,
+      item.au,
+      item.currentStock?.toString() || '0',
+      item.stockAfterPurchase?.toString() || '0',
+      item.remarks || ''
+    ]);
+    
+    (doc as any).autoTable({
+      head: [tableColumns],
+      body: tableRows,
+      startY: yPos + 5,
+      styles: {
+        fontSize: 9,
+        cellPadding: 4,
+      },
+      headStyles: {
+        fillColor: [34, 197, 94],
+        textColor: 255,
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: {
+        fillColor: [248, 250, 252]
+      },
+      columnStyles: {
+        0: { cellWidth: 50 },
+        1: { cellWidth: 20 },
+        2: { cellWidth: 20 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 25 },
+        5: { cellWidth: 50 }
+      }
+    });
+    
+    // Footer
+    const pageHeight = doc.internal.pageSize.height;
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Generated on: ${new Date().toLocaleString()}`, 20, pageHeight - 20);
+    doc.text('This is a system generated document.', 20, pageHeight - 15);
+    
+    // Save the PDF
+    doc.save(`AMG_Indent_${oneTimeInfo.indentNumber}_${new Date().toISOString().split('T')[0]}.pdf`);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -296,9 +410,13 @@ const IssueForm = () => {
         document.body.removeChild(iframe);
         document.body.removeChild(form);
 
+        // Store submitted data for PDF generation
+        setSubmittedData(submissionData);
+        setShowDownloadOption(true);
+
         toast({
           title: "✅ Submitted Successfully!",
-          description: "Your indent/issue request has been submitted and saved to the spreadsheet.",
+          description: "Your indent/issue request has been submitted. You can now download the PDF.",
         });
 
         // Reset form
@@ -791,7 +909,7 @@ const IssueForm = () => {
             </div>
 
             {/* Submit Button */}
-            <div className="flex justify-end pt-6">
+            <div className="flex justify-end gap-4 pt-6">
               <Button 
                 type="submit" 
                 disabled={isSubmitting}
@@ -806,6 +924,19 @@ const IssueForm = () => {
                   "Submit Indent/Issue Request"
                 )}
               </Button>
+
+              {/* Download PDF Button */}
+              {showDownloadOption && (
+                <Button 
+                  type="button" 
+                  onClick={() => generatePDF(submittedData)}
+                  variant="outline"
+                  className="flex items-center gap-2 px-6 py-3 text-base font-semibold h-12 border-2 border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300"
+                >
+                  <Download className="h-4 w-4" />
+                  Download PDF
+                </Button>
+              )}
             </div>
           </form>
         </div>
