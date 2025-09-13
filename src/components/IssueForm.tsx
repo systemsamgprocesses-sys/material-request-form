@@ -12,7 +12,7 @@ import { Plus, X, Check, ChevronsUpDown, Download, FileText, AlertTriangle } fro
 import { cn } from "@/lib/utils";
 import amgLogo from "@/assets/amg-logo-new.png";
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 
 interface ItemData {
   itemName: string;
@@ -379,7 +379,7 @@ const IssueForm = () => {
       
       console.log('Table data prepared:', { tableColumns, tableRows });
       
-      (doc as any).autoTable({
+      autoTable(doc, {
         head: [tableColumns],
         body: tableRows,
         startY: yPos + 5,
