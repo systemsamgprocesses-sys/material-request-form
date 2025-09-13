@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { Plus, X, Check, ChevronsUpDown, Download } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Plus, X, Check, ChevronsUpDown, Download, FileText, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import amgLogo from "@/assets/amg-logo-new.png";
 import jsPDF from 'jspdf';
@@ -55,6 +56,8 @@ const IssueForm = () => {
   const [openPopovers, setOpenPopovers] = useState<{[key: number | string]: boolean}>({});
   const [submittedData, setSubmittedData] = useState<any[]>([]);
   const [showDownloadOption, setShowDownloadOption] = useState(false);
+  const [showDownloadDialog, setShowDownloadDialog] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   
   const [oneTimeData, setOneTimeData] = useState<OneTimeData>({
     storeName: "",
@@ -76,8 +79,22 @@ const IssueForm = () => {
     stockAfterPurchase: 0
   }]);
 
-  // Load URL parameters and prefill form
+  // Load cached data and URL parameters
   useEffect(() => {
+    // Load from cache first
+    const cachedData = localStorage.getItem('amg_indent_form_data');
+    if (cachedData) {
+      try {
+        const parsed = JSON.parse(cachedData);
+        if (parsed.oneTimeData) setOneTimeData(parsed.oneTimeData);
+        if (parsed.items) setItems(parsed.items);
+        setHasUnsavedChanges(true);
+      } catch (error) {
+        console.error('Error loading cached data:', error);
+      }
+    }
+
+    // Then load URL parameters (these override cache)
     const urlParams = new URLSearchParams(window.location.search);
     const prefillOneTime: Partial<OneTimeData> = {};
     const prefillItems: Partial<ItemData> = {};
@@ -124,6 +141,33 @@ const IssueForm = () => {
       setItems([{ ...items[0], ...prefillItems }]);
     }
   }, []);
+
+  // Cache form data and prevent accidental closure
+  useEffect(() => {
+    const saveToCache = () => {
+      const formData = { oneTimeData, items };
+      localStorage.setItem('amg_indent_form_data', JSON.stringify(formData));
+    };
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault();
+        e.returnValue = 'You have unsaved changes. Are you sure you want to leave?';
+        return e.returnValue;
+      }
+    };
+
+    // Save to cache periodically
+    const interval = setInterval(saveToCache, 5000);
+    
+    // Prevent accidental closure
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [oneTimeData, items, hasUnsavedChanges]);
 
   // Load item names and stock data on component mount
   useEffect(() => {
@@ -188,6 +232,7 @@ const IssueForm = () => {
 
   const handleOneTimeDataChange = (field: keyof OneTimeData, value: string) => {
     setOneTimeData(prev => ({ ...prev, [field]: value }));
+    setHasUnsavedChanges(true);
   };
 
   const handleItemChange = (index: number, field: keyof ItemData, value: string) => {
@@ -218,6 +263,7 @@ const IssueForm = () => {
     }
     
     setItems(newItems);
+    setHasUnsavedChanges(true);
   };
 
   const addItem = () => {
@@ -413,10 +459,15 @@ const IssueForm = () => {
         // Store submitted data for PDF generation
         setSubmittedData(submissionData);
         setShowDownloadOption(true);
+        setShowDownloadDialog(true);
+        setHasUnsavedChanges(false);
+
+        // Clear cache after successful submission
+        localStorage.removeItem('amg_indent_form_data');
 
         toast({
           title: "✅ Submitted Successfully!",
-          description: "Your indent/issue request has been submitted. You can now download the PDF.",
+          description: "Your indent/issue request has been submitted successfully!",
         });
 
         // Reset form
@@ -925,20 +976,68 @@ const IssueForm = () => {
                 )}
               </Button>
 
-              {/* Download PDF Button */}
+              {/* Download Indent Button */}
               {showDownloadOption && (
                 <Button 
                   type="button" 
-                  onClick={() => generatePDF(submittedData)}
+                  onClick={() => setShowDownloadDialog(true)}
                   variant="outline"
                   className="flex items-center gap-2 px-6 py-3 text-base font-semibold h-12 border-2 border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300"
                 >
-                  <Download className="h-4 w-4" />
-                  Download PDF
+                  <FileText className="h-4 w-4" />
+                  Download Indent
                 </Button>
               )}
             </div>
           </form>
+
+          {/* Attractive Download Dialog */}
+          <Dialog open={showDownloadDialog} onOpenChange={setShowDownloadDialog}>
+            <DialogContent className="sm:max-w-md bg-gradient-to-br from-background to-muted/30 border-2 border-primary/20">
+              <DialogHeader className="text-center space-y-4">
+                <div className="mx-auto w-16 h-16 bg-gradient-to-br from-primary to-primary/70 rounded-full flex items-center justify-center shadow-lg">
+                  <FileText className="h-8 w-8 text-white" />
+                </div>
+                <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                  Download Indent
+                </DialogTitle>
+                <DialogDescription className="text-base text-muted-foreground">
+                  Your indent request has been submitted successfully. Would you like to download the PDF copy for your records?
+                </DialogDescription>
+              </DialogHeader>
+              
+              <div className="flex items-center gap-3 p-4 bg-primary/5 rounded-lg border border-primary/20">
+                <AlertTriangle className="h-5 w-5 text-amber-500 flex-shrink-0" />
+                <p className="text-sm text-muted-foreground">
+                  Keep this PDF for your records and future reference.
+                </p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => setShowDownloadDialog(false)}
+                  className="flex-1 h-12"
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={() => {
+                    generatePDF(submittedData);
+                    setShowDownloadDialog(false);
+                    toast({
+                      title: "Download Started",
+                      description: "Your indent PDF is being downloaded.",
+                    });
+                  }}
+                  className="flex-1 h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary text-white font-semibold shadow-lg"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
     </div>
